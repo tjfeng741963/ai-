@@ -382,10 +382,18 @@ export interface ComplianceResult {
     shortVideo?: 'suitable' | 'needs_modification' | 'unsuitable';
     longVideo?: 'suitable' | 'needs_modification' | 'unsuitable';
     cinema?: 'suitable' | 'needs_modification' | 'unsuitable';
+    // 国内平台
     hongGuo?: PlatformComplianceStatus;
     fanQie?: PlatformComplianceStatus;
     douyin?: PlatformComplianceStatus;
+    // 海外平台（单独评估）
     overseas?: PlatformComplianceStatus;
+    reelShort?: PlatformComplianceStatus;
+    dramaBox?: PlatformComplianceStatus;
+    shortMax?: PlatformComplianceStatus;
+    flexTV?: PlatformComplianceStatus;
+    tiktok?: PlatformComplianceStatus;
+    youtubeShorts?: PlatformComplianceStatus;
   };
 }
 
@@ -410,6 +418,12 @@ export interface RiskAssessment {
     hongGuo?: string[];
     fanQie?: string[];
     overseas?: string[];
+    reelShort?: string[];
+    dramaBox?: string[];
+    shortMax?: string[];
+    flexTV?: string[];
+    tiktok?: string[];
+    youtubeShorts?: string[];
   };
   valueOrientation?: {
     mainTheme: string;
@@ -508,7 +522,15 @@ export interface ExecutiveSummary {
 export interface DimensionDetailedAnalysis {
   score: number;
   grade: string;
+  /** 核心分析（200-400字完整段落） */
   analysis: string;
+  /** 关键发现（3-5条，每条50-80字） */
+  keyFindings?: string[];
+  /** 原文引用（「台词/描述」（集数）） */
+  evidence?: string[];
+  /** 优势亮点（2-3条） */
+  strengths?: string[];
+  /** 改进建议（2-3条） */
   improvements: string[];
 }
 

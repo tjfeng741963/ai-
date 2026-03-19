@@ -56,7 +56,7 @@ export function AnalysisProgress({
   isAnalyzing,
 }: AnalysisProgressProps) {
   // 确保有默认阶段数据
-  const displayPhases = phases.length > 0
+  const displayPhases: AnalysisPhase[] = phases.length > 0
     ? phases
     : ANALYSIS_PHASES.map((p) => ({
         id: p.id,

@@ -14,6 +14,9 @@ import {
   Heart,
   BarChart3,
   Lightbulb,
+  Search,
+  FileText,
+  CheckCircle2,
 } from 'lucide-react';
 import type {
   DetailedAnalysis,
@@ -21,6 +24,7 @@ import type {
   ActionableRecommendation,
   BusinessClosedLoopPlan,
 } from '@/types/rating-advanced.ts';
+import { getLabels, getDimensionLabel, type OutputLanguage } from '@/services/i18n-labels.ts';
 
 interface DetailedAnalysisPanelProps {
   detailedAnalysis: DetailedAnalysis;
@@ -28,6 +32,7 @@ interface DetailedAnalysisPanelProps {
   finalSummary?: {
     businessClosedLoop?: BusinessClosedLoopPlan;
   };
+  outputLanguage?: OutputLanguage;
 }
 
 // 等级颜色配置
@@ -40,37 +45,40 @@ const GRADE_COLORS: Record<string, { text: string; bg: string }> = {
   'D': { text: 'text-red-700', bg: 'bg-red-100' },
 };
 
-// 分析维度配置
-const DIMENSION_CONFIG: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string }> = {
-  targetAudience: { icon: Users, label: '目标受众定位' },
-  originality: { icon: Sparkles, label: '原创性评分' },
-  trendAlignment: { icon: TrendingUp, label: '当下热播契合度' },
-  narrativeLogic: { icon: Layers, label: '叙事逻辑' },
-  hookStrength: { icon: Zap, label: '钩子强度' },
-  pleasureDesign: { icon: Heart, label: '爽点设计' },
-  pacingStructure: { icon: BarChart3, label: '节奏与结构' },
-  plotCoherence: { icon: Target, label: '主线连贯性' },
-  characterization: { icon: Users, label: '人物塑造' },
-  dialogueQuality: { icon: MessageSquare, label: '对白质量' },
-  suspenseEffectiveness: { icon: Zap, label: '悬念有效性' },
-  userStickiness: { icon: Heart, label: '用户粘性' },
-  viralPotential: { icon: TrendingUp, label: '传播潜力' },
-  contentCompliance: { icon: Shield, label: '内容合规性' },
-  valueOrientation: { icon: Target, label: '价值观导向' },
+// 维度图标配置
+const DIMENSION_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  targetAudience: Users,
+  originality: Sparkles,
+  trendAlignment: TrendingUp,
+  narrativeLogic: Layers,
+  hookStrength: Zap,
+  pleasureDesign: Heart,
+  pacingStructure: BarChart3,
+  plotCoherence: Target,
+  characterization: Users,
+  dialogueQuality: MessageSquare,
+  suspenseEffectiveness: Zap,
+  userStickiness: Heart,
+  viralPotential: TrendingUp,
+  contentCompliance: Shield,
+  valueOrientation: Target,
 };
 
 // 单个维度详情卡片
 function DimensionCard({
   dimensionKey,
   data,
+  lang = 'zh',
 }: {
   dimensionKey: string;
   data: DimensionDetailedAnalysis;
+  lang?: OutputLanguage;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const config = DIMENSION_CONFIG[dimensionKey] || { icon: Target, label: dimensionKey };
+  const Icon = DIMENSION_ICONS[dimensionKey] || Target;
+  const label = getDimensionLabel(dimensionKey, lang);
+  const L = getLabels(lang);
   const gradeColor = GRADE_COLORS[data.grade] || GRADE_COLORS['B'];
-  const Icon = config.icon;
 
   return (
     <div className="border border-gray-100 rounded-xl overflow-hidden bg-white">
@@ -80,7 +88,7 @@ function DimensionCard({
       >
         <div className="flex items-center gap-3">
           <Icon className="w-5 h-5 text-indigo-500" />
-          <span className="font-medium text-gray-800">{config.label}</span>
+          <span className="font-medium text-gray-800">{label}</span>
         </div>
         <div className="flex items-center gap-3">
           <span className={`px-2 py-0.5 rounded text-sm font-bold ${gradeColor.bg} ${gradeColor.text}`}>
@@ -107,20 +115,77 @@ function DimensionCard({
             className="border-t border-gray-100"
           >
             <div className="p-4 space-y-4">
-              {/* Analysis Text */}
+              {/* 综合分析 */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">详细分析</h4>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2 flex items-center gap-1">
+                  <BarChart3 className="w-3 h-3" />
+                  {L.analysisTitle}
+                </h4>
                 <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                  {data.analysis}
+                  {data.analysis || L.noAnalysis}
                 </p>
               </div>
 
-              {/* Improvements */}
+              {/* 关键发现 */}
+              {data.keyFindings && data.keyFindings.length > 0 && (
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h4 className="text-xs font-semibold text-blue-700 uppercase mb-2 flex items-center gap-1">
+                    <Search className="w-3 h-3" />
+                    {L.keyFindingsTitle}
+                  </h4>
+                  <ul className="space-y-2">
+                    {data.keyFindings.map((item, i) => (
+                      <li key={i} className="text-sm text-blue-800 flex items-start gap-2">
+                        <span className="mt-1 w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 原文引用 */}
+              {data.evidence && data.evidence.length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-xs font-semibold text-gray-600 uppercase mb-2 flex items-center gap-1">
+                    <FileText className="w-3 h-3" />
+                    {L.evidenceTitle}
+                  </h4>
+                  <ul className="space-y-2">
+                    {data.evidence.map((item, i) => (
+                      <li key={i} className="text-sm text-gray-700 flex items-start gap-2 italic">
+                        <span className="mt-1 w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 优势亮点 */}
+              {data.strengths && data.strengths.length > 0 && (
+                <div className="bg-green-50 rounded-lg p-4">
+                  <h4 className="text-xs font-semibold text-green-700 uppercase mb-2 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    {L.strengthsTitle}
+                  </h4>
+                  <ul className="space-y-2">
+                    {data.strengths.map((item, i) => (
+                      <li key={i} className="text-sm text-green-800 flex items-start gap-2">
+                        <span className="mt-1 w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 可打磨点 */}
               {data.improvements && data.improvements.length > 0 && (
                 <div className="bg-amber-50 rounded-lg p-4">
                   <h4 className="text-xs font-semibold text-amber-700 uppercase mb-2 flex items-center gap-1">
                     <Lightbulb className="w-3 h-3" />
-                    可打磨点
+                    {L.improvementsTitle}
                   </h4>
                   <ul className="space-y-2">
                     {data.improvements.map((item, i) => (
@@ -154,7 +219,11 @@ export function DetailedAnalysisPanel({
   detailedAnalysis,
   actionableRecommendations,
   finalSummary,
+  outputLanguage = 'zh',
 }: DetailedAnalysisPanelProps) {
+  // 标签始终使用中文（客户群体为华人），outputLanguage仅影响台词语言
+  const lang: OutputLanguage = 'zh';
+  const L = getLabels(lang);
   const { marketResonance, narrativeDNA, commercialPotential, complianceAssessment } = detailedAnalysis;
   const businessLoop = finalSummary?.businessClosedLoop;
 
@@ -166,14 +235,11 @@ export function DetailedAnalysisPanel({
         animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100"
       >
-        <SectionTitle
-          title="A. 市场共鸣与竞争定位"
-          subtitle="分析剧本与目标市场的契合度"
-        />
+        <SectionTitle title={L.sectionA} subtitle={L.sectionASubtitle} />
         <div className="space-y-3">
-          <DimensionCard dimensionKey="targetAudience" data={marketResonance.targetAudience} />
-          <DimensionCard dimensionKey="originality" data={marketResonance.originality} />
-          <DimensionCard dimensionKey="trendAlignment" data={marketResonance.trendAlignment} />
+          <DimensionCard dimensionKey="targetAudience" data={marketResonance.targetAudience} lang={lang} />
+          <DimensionCard dimensionKey="originality" data={marketResonance.originality} lang={lang} />
+          <DimensionCard dimensionKey="trendAlignment" data={marketResonance.trendAlignment} lang={lang} />
         </div>
       </motion.div>
 
@@ -184,19 +250,16 @@ export function DetailedAnalysisPanel({
         transition={{ delay: 0.1 }}
         className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100"
       >
-        <SectionTitle
-          title="B. 叙事与剧本基因"
-          subtitle="评估剧本的核心创作质量"
-        />
+        <SectionTitle title={L.sectionB} subtitle={L.sectionBSubtitle} />
         <div className="space-y-3">
-          <DimensionCard dimensionKey="narrativeLogic" data={narrativeDNA.narrativeLogic} />
-          <DimensionCard dimensionKey="hookStrength" data={narrativeDNA.hookStrength} />
-          <DimensionCard dimensionKey="pleasureDesign" data={narrativeDNA.pleasureDesign} />
-          <DimensionCard dimensionKey="pacingStructure" data={narrativeDNA.pacingStructure} />
-          <DimensionCard dimensionKey="plotCoherence" data={narrativeDNA.plotCoherence} />
-          <DimensionCard dimensionKey="characterization" data={narrativeDNA.characterization} />
-          <DimensionCard dimensionKey="dialogueQuality" data={narrativeDNA.dialogueQuality} />
-          <DimensionCard dimensionKey="suspenseEffectiveness" data={narrativeDNA.suspenseEffectiveness} />
+          <DimensionCard dimensionKey="narrativeLogic" data={narrativeDNA.narrativeLogic} lang={lang} />
+          <DimensionCard dimensionKey="hookStrength" data={narrativeDNA.hookStrength} lang={lang} />
+          <DimensionCard dimensionKey="pleasureDesign" data={narrativeDNA.pleasureDesign} lang={lang} />
+          <DimensionCard dimensionKey="pacingStructure" data={narrativeDNA.pacingStructure} lang={lang} />
+          <DimensionCard dimensionKey="plotCoherence" data={narrativeDNA.plotCoherence} lang={lang} />
+          <DimensionCard dimensionKey="characterization" data={narrativeDNA.characterization} lang={lang} />
+          <DimensionCard dimensionKey="dialogueQuality" data={narrativeDNA.dialogueQuality} lang={lang} />
+          <DimensionCard dimensionKey="suspenseEffectiveness" data={narrativeDNA.suspenseEffectiveness} lang={lang} />
         </div>
       </motion.div>
 
@@ -207,13 +270,10 @@ export function DetailedAnalysisPanel({
         transition={{ delay: 0.2 }}
         className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100"
       >
-        <SectionTitle
-          title="C. 商业化潜力"
-          subtitle="评估剧本的商业变现能力"
-        />
+        <SectionTitle title={L.sectionC} subtitle={L.sectionCSubtitle} />
         <div className="space-y-3">
-          <DimensionCard dimensionKey="userStickiness" data={commercialPotential.userStickiness} />
-          <DimensionCard dimensionKey="viralPotential" data={commercialPotential.viralPotential} />
+          <DimensionCard dimensionKey="userStickiness" data={commercialPotential.userStickiness} lang={lang} />
+          <DimensionCard dimensionKey="viralPotential" data={commercialPotential.viralPotential} lang={lang} />
         </div>
       </motion.div>
 
@@ -224,13 +284,10 @@ export function DetailedAnalysisPanel({
         transition={{ delay: 0.3 }}
         className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100"
       >
-        <SectionTitle
-          title="D. 合规性评估"
-          subtitle="审查内容安全与价值导向"
-        />
+        <SectionTitle title={L.sectionD} subtitle={L.sectionDSubtitle} />
         <div className="space-y-3">
-          <DimensionCard dimensionKey="contentCompliance" data={complianceAssessment.contentCompliance} />
-          <DimensionCard dimensionKey="valueOrientation" data={complianceAssessment.valueOrientation} />
+          <DimensionCard dimensionKey="contentCompliance" data={complianceAssessment.contentCompliance} lang={lang} />
+          <DimensionCard dimensionKey="valueOrientation" data={complianceAssessment.valueOrientation} lang={lang} />
         </div>
       </motion.div>
 
@@ -244,7 +301,7 @@ export function DetailedAnalysisPanel({
         >
           <h3 className="text-lg font-bold text-indigo-800 mb-4 flex items-center gap-2">
             <Lightbulb className="w-5 h-5" />
-            综合可操作建议
+            {L.actionableRecommendations}
           </h3>
           <div className="space-y-4">
             {actionableRecommendations.map((rec, index) => (
@@ -277,17 +334,17 @@ export function DetailedAnalysisPanel({
         >
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Target className="w-5 h-5 text-indigo-500" />
-            E. 商业化闭环方案
+            {L.businessClosedLoop}
           </h3>
 
           <div className="space-y-4 text-sm text-gray-700">
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">目标定位</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">{L.targetPositioning}</p>
               <p className="leading-relaxed">{businessLoop.targetPositioning}</p>
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">变现路径</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">{L.monetizationPath}</p>
               <ul className="space-y-1">
                 {businessLoop.monetizationPath.map((item, i) => (
                   <li key={i} className="flex items-start gap-2">
@@ -299,7 +356,7 @@ export function DetailedAnalysisPanel({
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">上线节奏</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">{L.launchPlan}</p>
               <ul className="space-y-1">
                 {businessLoop.launchPlan.map((item, i) => (
                   <li key={i} className="flex items-start gap-2">
@@ -311,15 +368,15 @@ export function DetailedAnalysisPanel({
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">KPI看板</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{L.kpiDashboard}</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border border-gray-200 rounded-lg overflow-hidden">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="text-left p-2 border-b border-gray-200">指标</th>
-                      <th className="text-left p-2 border-b border-gray-200">目标</th>
-                      <th className="text-left p-2 border-b border-gray-200">周期</th>
-                      <th className="text-left p-2 border-b border-gray-200">负责人</th>
+                      <th className="text-left p-2 border-b border-gray-200">{L.kpiMetric}</th>
+                      <th className="text-left p-2 border-b border-gray-200">{L.kpiTarget}</th>
+                      <th className="text-left p-2 border-b border-gray-200">{L.kpiWindow}</th>
+                      <th className="text-left p-2 border-b border-gray-200">{L.kpiOwner}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -337,7 +394,7 @@ export function DetailedAnalysisPanel({
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">验证实验</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">{L.validationExperiments}</p>
               <ul className="space-y-1">
                 {businessLoop.validationExperiments.map((item, i) => (
                   <li key={i} className="flex items-start gap-2">
@@ -349,7 +406,7 @@ export function DetailedAnalysisPanel({
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">风险与兜底</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">{L.riskMitigation}</p>
               <ul className="space-y-1">
                 {businessLoop.riskMitigation.map((item, i) => (
                   <li key={i} className="flex items-start gap-2">
@@ -361,7 +418,7 @@ export function DetailedAnalysisPanel({
             </div>
 
             <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-              <p className="text-xs font-semibold text-indigo-700 uppercase mb-1">下一季度目标</p>
+              <p className="text-xs font-semibold text-indigo-700 uppercase mb-1">{L.nextQuarterGoal}</p>
               <p className="text-sm text-indigo-800">{businessLoop.nextQuarterGoal}</p>
             </div>
           </div>

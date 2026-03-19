@@ -47,11 +47,14 @@ import {
   STRUCTURE_DETAILED_PROMPT,
   CHARACTER_DETAILED_PROMPT,
   EMOTION_DETAILED_PROMPT,
-  MARKET_DETAILED_PROMPT,
-  RISK_DETAILED_PROMPT,
+  getMarketDetailedPrompt,
+  getRiskDetailedPrompt,
   fillDetailedPrompt,
   DETAILED_ANALYSIS_PHASES,
 } from './prompts-detailed.ts';
+import { callWithSplitRetry } from './split-retry.ts';
+import { buildSubGroupPrompt, NARRATIVE_SPLIT_GROUPS, COMMERCIAL_SPLIT_GROUPS } from './prompts-split.ts';
+import { type MarketType, getMarketContextPrompt } from './market-context.ts';
 
 // API 配置
 const API_BASE = '/api';
@@ -121,12 +124,12 @@ export function getCurrentModel(): ModelSelection {
 
 // ==================== 基础 API 调用 ====================
 
-interface ChatMessage {
+export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
-interface ChatOptions {
+export interface ChatOptions {
   temperature?: number;
   maxTokens?: number;
   provider?: ProviderId;
@@ -1159,6 +1162,45 @@ export interface DetailedAnalysisResult {
 }
 
 /**
+ * 标准化维度分析结果
+ * 兼容AI返回旧格式(findings/suggestions)和新格式(analysis/keyFindings/evidence/strengths/improvements)
+ */
+function normalizeDimensionResult<T>(raw: T): T {
+  if (!raw || typeof raw !== 'object') return raw;
+  const normalized = { ...raw } as Record<string, unknown>;
+  for (const key of Object.keys(normalized)) {
+    const dim = normalized[key];
+    if (dim && typeof dim === 'object' && 'score' in dim) {
+      const d = dim as Record<string, unknown>;
+      // findings[] → analysis (string) 或 keyFindings[]
+      if (Array.isArray(d.findings)) {
+        if (!d.analysis) {
+          d.analysis = (d.findings as string[]).join('；');
+        }
+        if (!Array.isArray(d.keyFindings)) {
+          d.keyFindings = d.findings;
+        }
+      }
+      if (!d.analysis && typeof d.findings === 'string') {
+        d.analysis = d.findings;
+      }
+      // suggestions[] → improvements[]
+      if (!Array.isArray(d.improvements) && Array.isArray(d.suggestions)) {
+        d.improvements = d.suggestions;
+      }
+      // 确保所有字段至少有默认值
+      if (!d.analysis || typeof d.analysis !== 'string') d.analysis = '';
+      if (!Array.isArray(d.keyFindings)) d.keyFindings = [];
+      if (!Array.isArray(d.evidence)) d.evidence = [];
+      if (!Array.isArray(d.strengths)) d.strengths = [];
+      if (!Array.isArray(d.improvements)) d.improvements = [];
+      normalized[key] = d;
+    }
+  }
+  return normalized as T;
+}
+
+/**
  * 详细分析 - 渐进式多轮输出
  * 每轮专注于一个维度，输出更详细的分析内容
  */
@@ -1166,9 +1208,18 @@ export async function analyzeScriptDetailed(
   scriptContent: string,
   onProgress?: DetailedProgressCallback,
   onPhaseComplete?: (phase: AnalysisPhase, phaseData: unknown) => void,
-  modelOptions?: ChatOptions
+  modelOptions?: ChatOptions,
+  marketType: MarketType = 'domestic',
+  outputLanguage: 'zh' | 'en' = 'zh'
 ): Promise<AdvancedRatingResult & DetailedAnalysisResult> {
   const startTime = Date.now();
+
+  // 生成市场上下文增强的系统提示词
+  const marketContext = getMarketContextPrompt(marketType);
+  const languageSuffix = outputLanguage === 'en'
+    ? '\n\n重要：本剧本台词为英文（面向海外华人市场）。请注意：\n1. 分析英文台词的质量、自然度、是否有Chinglish问题\n2. 引用原文台词时保留英文原文\n3. 所有分析文本、发现、建议、推荐等内容必须使用中文输出\n4. JSON字段名保持不变，文本内容值使用中文'
+    : '';
+  const marketSystemPrompt = `${SYSTEM_PROMPT}\n\n${marketContext}${languageSuffix}`;
 
   // 使用更高的 maxTokens 以获取更详细的输出
   const detailedOptions: ChatOptions = {
@@ -1217,7 +1268,7 @@ export async function analyzeScriptDetailed(
 
     result.productionAnalysis = await callAndExtractJSON<NonNullable<DetailedAnalysisResult['productionAnalysis']>>(
       [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: marketSystemPrompt },
         { role: 'user', content: productionPrompt },
       ],
       detailedOptions,
@@ -1240,7 +1291,7 @@ export async function analyzeScriptDetailed(
 
     result.executiveSummary = await callAndExtractJSON<NonNullable<DetailedAnalysisResult['executiveSummary']>>(
       [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: marketSystemPrompt },
         { role: 'user', content: executivePrompt },
       ],
       detailedOptions,
@@ -1262,7 +1313,7 @@ export async function analyzeScriptDetailed(
 
     result.structureAnalysis = await callAndExtractJSON<StructureAnalysis>(
       [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: marketSystemPrompt },
         { role: 'user', content: structurePrompt },
       ],
       detailedOptions,
@@ -1284,7 +1335,7 @@ export async function analyzeScriptDetailed(
 
     result.characterAnalysis = await callAndExtractJSON<CharacterAnalysis>(
       [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: marketSystemPrompt },
         { role: 'user', content: characterPrompt },
       ],
       detailedOptions,
@@ -1306,7 +1357,7 @@ export async function analyzeScriptDetailed(
 
     result.emotionAnalysis = await callAndExtractJSON<EmotionAnalysis>(
       [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: marketSystemPrompt },
         { role: 'user', content: emotionPrompt },
       ],
       detailedOptions,
@@ -1328,12 +1379,13 @@ export async function analyzeScriptDetailed(
 
     result.marketResonance = await callAndExtractJSON<MarketResonanceAnalysis>(
       [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: marketSystemPrompt },
         { role: 'user', content: marketResonancePrompt },
       ],
       detailedOptions,
       '市场共鸣'
     );
+    result.marketResonance = normalizeDimensionResult(result.marketResonance);
 
     updatePhase(5, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[5], result.marketResonance);
@@ -1344,13 +1396,13 @@ export async function analyzeScriptDetailed(
     updatePhase(6, { status: 'in_progress', startTime: Date.now() });
     onProgress?.(calcTotalProgress(6, 0), '市场定价', '分析定价建议、平台推荐、收益预测...', 6);
 
-    const marketPrompt = fillDetailedPrompt(MARKET_DETAILED_PROMPT, {
+    const marketPrompt = fillDetailedPrompt(getMarketDetailedPrompt(marketType), {
       SCRIPT_CONTENT: scriptContent,
     });
 
     result.marketSuggestion = await callAndExtractJSON<MarketSuggestion>(
       [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: marketSystemPrompt },
         { role: 'user', content: marketPrompt },
       ],
       detailedOptions,
@@ -1370,14 +1422,18 @@ export async function analyzeScriptDetailed(
       SCRIPT_CONTENT: scriptContent,
     });
 
-    result.narrativeDNA = await callAndExtractJSON<NarrativeDNAAnalysis>(
-      [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: narrativePrompt },
-      ],
+    result.narrativeDNA = await callWithSplitRetry<NarrativeDNAAnalysis>(
+      callAndExtractJSON,
+      marketSystemPrompt,
+      narrativePrompt,
       detailedOptions,
-      '叙事基因'
+      {
+        phaseName: '叙事基因',
+        groups: NARRATIVE_SPLIT_GROUPS,
+        promptForDimensions: (dims) => buildSubGroupPrompt(dims, scriptContent, 'narrative'),
+      }
     );
+    result.narrativeDNA = normalizeDimensionResult(result.narrativeDNA);
 
     updatePhase(7, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[7], result.narrativeDNA);
@@ -1388,7 +1444,7 @@ export async function analyzeScriptDetailed(
     updatePhase(8, { status: 'in_progress', startTime: Date.now() });
     onProgress?.(calcTotalProgress(8, 0), '风险评估', '评估合规风险、市场风险、制作风险...', 8);
 
-    const riskPrompt = fillDetailedPrompt(RISK_DETAILED_PROMPT, {
+    const riskPrompt = fillDetailedPrompt(getRiskDetailedPrompt(marketType), {
       SCRIPT_CONTENT: scriptContent,
       PRODUCTION_DATA: JSON.stringify(result.productionAnalysis, null, 2),
       COMMERCIAL_DATA: '商业合规分析将在后续阶段完成后提供',
@@ -1396,7 +1452,7 @@ export async function analyzeScriptDetailed(
 
     result.riskAssessment = await callAndExtractJSON<RiskAssessment>(
       [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: marketSystemPrompt },
         { role: 'user', content: riskPrompt },
       ],
       detailedOptions,
@@ -1416,14 +1472,17 @@ export async function analyzeScriptDetailed(
       SCRIPT_CONTENT: scriptContent,
     });
 
-    const commercialRaw = await callAndExtractJSON<Record<string, unknown>>(
-      [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: commercialPrompt },
-      ],
+    const commercialRaw = normalizeDimensionResult(await callWithSplitRetry<Record<string, unknown>>(
+      callAndExtractJSON,
+      marketSystemPrompt,
+      commercialPrompt,
       detailedOptions,
-      '商业合规'
-    );
+      {
+        phaseName: '商业合规',
+        groups: COMMERCIAL_SPLIT_GROUPS,
+        promptForDimensions: (dims) => buildSubGroupPrompt(dims, scriptContent, 'commercial'),
+      }
+    ));
     result.commercialPotential = {
       userStickiness: commercialRaw.userStickiness,
       viralPotential: commercialRaw.viralPotential,
@@ -1457,7 +1516,7 @@ export async function analyzeScriptDetailed(
       finalSummary: DetailedAnalysisResult['finalSummary'];
     }>(
       [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: marketSystemPrompt },
         { role: 'user', content: recommendationsPrompt },
       ],
       detailedOptions,
@@ -1483,7 +1542,7 @@ export async function analyzeScriptDetailed(
       overallScore: finalScore,
       overallGrade: finalGrade as 'S' | 'A' | 'B' | 'C' | 'D',
       gradeLabel: result.finalSummary?.gradeLabel ?? '剧本分析完成',
-      dimensions,
+      dimensions: dimensions as RatingResult['dimensions'],
       summary: {
         oneSentence: result.finalSummary?.oneSentence ?? result.executiveSummary?.oneSentence ?? '',
         paragraph: result.finalSummary?.paragraph ?? result.executiveSummary?.coreConclusion ?? '',

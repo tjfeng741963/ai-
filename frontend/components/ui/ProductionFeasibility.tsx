@@ -5,45 +5,49 @@ interface ProductionFeasibilityProps {
   data: ProductionFeasibilityType;
 }
 
-// AI漫剧预算等级配置（基于2025年市场数据）
-// 参考：https://zhuanlan.zhihu.com/p/1968989616490152231
-// 中端AI漫剧约800-1200元/分钟，80集×2分钟=160分钟
+// AI漫剧预算等级配置（基于2025年实际市场数据）
+// 每集约30-40个分镜，单集成本30-200元
 const BUDGET_CONFIG: Record<BudgetTier, {
   label: string;
-  range: string;
-  perMinute: string;
+  perEpisode: string;
+  fullSeason: string;
+  panels: string;
   color: string;
   bg: string;
   gradient: string;
 }> = {
   S: {
     label: 'S级精品',
-    range: '30-50万',
-    perMinute: '2000-3000元/分钟',
+    perEpisode: '120-200元/集',
+    fullSeason: '80集约9600-16000元',
+    panels: '30-40分镜/集',
     color: 'text-amber-700',
     bg: 'bg-amber-100',
     gradient: 'from-amber-400 to-orange-500',
   },
   A: {
     label: 'A级优质',
-    range: '15-30万',
-    perMinute: '1000-2000元/分钟',
+    perEpisode: '80-120元/集',
+    fullSeason: '80集约6400-9600元',
+    panels: '30-40分镜/集',
     color: 'text-purple-700',
     bg: 'bg-purple-100',
     gradient: 'from-purple-400 to-indigo-500',
   },
   B: {
     label: 'B级标准',
-    range: '8-15万',
-    perMinute: '500-1000元/分钟',
+    perEpisode: '50-80元/集',
+    fullSeason: '80集约4000-6400元',
+    panels: '30-40分镜/集',
     color: 'text-blue-700',
     bg: 'bg-blue-100',
     gradient: 'from-blue-400 to-cyan-500',
   },
   C: {
     label: 'C级轻量',
-    range: '3-8万',
-    perMinute: '200-500元/分钟',
+    perEpisode: '30-50元/集',
+    fullSeason: '80集约2400-4000元',
+    panels: '30-40分镜/集',
     color: 'text-green-700',
     bg: 'bg-green-100',
     gradient: 'from-green-400 to-emerald-500',
@@ -109,12 +113,12 @@ export function ProductionFeasibility({ data }: ProductionFeasibilityProps) {
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-white/80 text-sm">预估成本</div>
+                <div className="text-white/80 text-sm">单集成本</div>
                 <div className="text-white text-2xl font-bold mt-1">
-                  ¥{budgetConfig.range}
+                  {budgetConfig.perEpisode}
                 </div>
                 <div className="text-white/70 text-xs mt-1">
-                  {budgetConfig.perMinute}
+                  {budgetConfig.panels} · {budgetConfig.fullSeason}
                 </div>
               </div>
             </div>

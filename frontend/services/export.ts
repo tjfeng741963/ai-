@@ -8,9 +8,11 @@ import type {
   AdvancedRatingResult,
   ExecutiveSummary,
   DetailedAnalysis,
+  DimensionDetailedAnalysis,
   ActionableRecommendation,
 } from '@/types/rating-advanced.ts';
 import { GRADE_CONFIG, DIMENSION_LABELS } from '@/types/rating.ts';
+import { getLabels, getGradeLabelByLang, getDimensionLabel, type OutputLanguage } from './i18n-labels.ts';
 
 /** 导出格式 */
 export type ExportFormat = 'html' | 'markdown' | 'pdf';
@@ -23,19 +25,12 @@ export interface ExportOptions {
   includeRecommendations: boolean;
   includeCharts: boolean;
   scriptName?: string;
+  language?: OutputLanguage;
 }
 
-/** 获取等级对应的中文标签 */
-function getGradeLabel(grade: string): string {
-  const labels: Record<string, string> = {
-    'S': 'S级（爆款潜力）',
-    'A+': 'A+级（高质量剧本）',
-    'A': 'A级（优质剧本）',
-    'B': 'B级（良好剧本）',
-    'C': 'C级（待完善）',
-    'D': 'D级（需要大幅修改）',
-  };
-  return labels[grade] || `${grade}级`;
+/** 获取等级对应的标签 */
+function getGradeLabel(grade: string, lang: OutputLanguage = 'zh'): string {
+  return getGradeLabelByLang(grade, lang);
 }
 
 /** 生成 HTML 报告 */
@@ -49,14 +44,14 @@ export function generateHTMLReport(
     includeDetailedAnalysis = true,
     includeRecommendations = true,
     scriptName = '未命名剧本',
+    language = 'zh',
   } = options;
 
+  // 标签始终使用中文（客户群体为华人），language参数仅标识台词语言
+  const lang: OutputLanguage = 'zh';
+  const L = getLabels(lang);
   const gradeConfig = GRADE_CONFIG[result.overallGrade as GradeLevel];
-  const now = new Date().toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const now = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 
   let html = `
 <!DOCTYPE html>
@@ -64,7 +59,7 @@ export function generateHTMLReport(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>剧本AI评级报告 - ${scriptName}</title>
+  <title>${L.reportSubtitle} - ${scriptName}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -188,6 +183,94 @@ export function generateHTMLReport(
       left: 0;
       color: #f59e0b;
     }
+    .key-findings {
+      background: #eff6ff;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    .key-findings-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e40af;
+      margin-bottom: 8px;
+    }
+    .key-findings-list {
+      list-style: none;
+      padding: 0;
+    }
+    .key-findings-list li {
+      color: #1e3a5f;
+      font-size: 13px;
+      padding: 4px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+    .key-findings-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #3b82f6;
+    }
+    .evidence-section {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    .evidence-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4b5563;
+      margin-bottom: 8px;
+    }
+    .evidence-list {
+      list-style: none;
+      padding: 0;
+    }
+    .evidence-list li {
+      color: #6b7280;
+      font-size: 13px;
+      font-style: italic;
+      padding: 4px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+    .evidence-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #9ca3af;
+    }
+    .strengths {
+      background: #f0fdf4;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    .strengths-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #166534;
+      margin-bottom: 8px;
+    }
+    .strengths-list {
+      list-style: none;
+      padding: 0;
+    }
+    .strengths-list li {
+      color: #14532d;
+      font-size: 13px;
+      padding: 4px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+    .strengths-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #22c55e;
+    }
     .recommendation {
       display: flex;
       gap: 16px;
@@ -226,10 +309,10 @@ export function generateHTMLReport(
 <body>
   <div class="container">
     <div class="header">
-      <h1>AI智能诊断｜商业适配度·结构风险·变现潜力</h1>
-      <div class="subtitle">剧本名称：${scriptName} | 生成日期：${now}</div>
+      <h1>${L.reportTitle}</h1>
+      <div class="subtitle">${L.scriptLabel}：${scriptName} | ${L.dateLabel}：${now}</div>
       <div class="grade-badge">${result.overallGrade}</div>
-      <div class="score">总体潜力评分：${result.overallScore.toFixed(0)}/100（${gradeConfig.label}）</div>
+      <div class="score">${L.overallScoreLabel}：${result.overallScore.toFixed(0)}/100（${getGradeLabel(result.overallGrade, lang)}）</div>
     </div>
 
     <div class="content">
@@ -240,7 +323,7 @@ export function generateHTMLReport(
     const summary = advancedResult.executiveSummary;
     html += `
       <div class="section">
-        <h2 class="section-title">I. 执行摘要</h2>
+        <h2 class="section-title">${L.executiveSummary}</h2>
         <div class="summary-box">
           <div class="summary-title">${summary.oneSentence}</div>
           <div class="themes">
@@ -249,20 +332,19 @@ export function generateHTMLReport(
           </div>
         </div>
         <div style="margin-bottom: 20px;">
-          <h4 style="color: #333; margin-bottom: 8px;">剧情主线</h4>
+          <h4 style="color: #333; margin-bottom: 8px;">${L.plotSummaryLabel}</h4>
           <p class="summary-text">${summary.plotSummary}</p>
         </div>
         <div>
-          <h4 style="color: #333; margin-bottom: 8px;">核心结论</h4>
+          <h4 style="color: #333; margin-bottom: 8px;">${L.coreConclusion}</h4>
           <p class="summary-text">${summary.coreConclusion}</p>
         </div>
       </div>
     `;
   } else {
-    // 没有高级摘要时使用基础摘要
     html += `
       <div class="section">
-        <h2 class="section-title">I. 执行摘要</h2>
+        <h2 class="section-title">${L.executiveSummary}</h2>
         <div class="summary-box">
           <div class="summary-title">${result.summary.oneSentence}</div>
           <p class="summary-text" style="margin-top: 12px;">${result.summary.paragraph}</p>
@@ -278,37 +360,41 @@ export function generateHTMLReport(
     // 市场共鸣
     html += `
       <div class="section">
-        <h2 class="section-title">II. 详细分析</h2>
+        <h2 class="section-title">${L.detailedAnalysis}</h2>
 
-        <h3 style="color: #555; font-size: 16px; margin: 20px 0 16px;">A. 市场共鸣与竞争定位</h3>
+        <h3 style="color: #555; font-size: 16px; margin: 20px 0 16px;">${L.sectionA}</h3>
+        <p style="color: #888; font-size: 13px; margin: -12px 0 16px;">${L.sectionASubtitle}</p>
         <div class="dimension-list">
-          ${renderDimensionItem('目标受众定位', da.marketResonance.targetAudience)}
-          ${renderDimensionItem('原创性评分', da.marketResonance.originality)}
-          ${renderDimensionItem('当下热播契合度', da.marketResonance.trendAlignment)}
+          ${renderDimensionItem(getDimensionLabel('targetAudience', lang), da.marketResonance.targetAudience, lang)}
+          ${renderDimensionItem(getDimensionLabel('originality', lang), da.marketResonance.originality, lang)}
+          ${renderDimensionItem(getDimensionLabel('trendAlignment', lang), da.marketResonance.trendAlignment, lang)}
         </div>
 
-        <h3 style="color: #555; font-size: 16px; margin: 20px 0 16px;">B. 叙事与剧本基因</h3>
+        <h3 style="color: #555; font-size: 16px; margin: 20px 0 16px;">${L.sectionB}</h3>
+        <p style="color: #888; font-size: 13px; margin: -12px 0 16px;">${L.sectionBSubtitle}</p>
         <div class="dimension-list">
-          ${renderDimensionItem('叙事逻辑', da.narrativeDNA.narrativeLogic)}
-          ${renderDimensionItem('钩子强度', da.narrativeDNA.hookStrength)}
-          ${renderDimensionItem('爽点设计', da.narrativeDNA.pleasureDesign)}
-          ${renderDimensionItem('节奏与结构', da.narrativeDNA.pacingStructure)}
-          ${renderDimensionItem('主线连贯性', da.narrativeDNA.plotCoherence)}
-          ${renderDimensionItem('人物塑造', da.narrativeDNA.characterization)}
-          ${renderDimensionItem('对白质量', da.narrativeDNA.dialogueQuality)}
-          ${renderDimensionItem('悬念有效性', da.narrativeDNA.suspenseEffectiveness)}
+          ${renderDimensionItem(getDimensionLabel('narrativeLogic', lang), da.narrativeDNA.narrativeLogic, lang)}
+          ${renderDimensionItem(getDimensionLabel('hookStrength', lang), da.narrativeDNA.hookStrength, lang)}
+          ${renderDimensionItem(getDimensionLabel('pleasureDesign', lang), da.narrativeDNA.pleasureDesign, lang)}
+          ${renderDimensionItem(getDimensionLabel('pacingStructure', lang), da.narrativeDNA.pacingStructure, lang)}
+          ${renderDimensionItem(getDimensionLabel('plotCoherence', lang), da.narrativeDNA.plotCoherence, lang)}
+          ${renderDimensionItem(getDimensionLabel('characterization', lang), da.narrativeDNA.characterization, lang)}
+          ${renderDimensionItem(getDimensionLabel('dialogueQuality', lang), da.narrativeDNA.dialogueQuality, lang)}
+          ${renderDimensionItem(getDimensionLabel('suspenseEffectiveness', lang), da.narrativeDNA.suspenseEffectiveness, lang)}
         </div>
 
-        <h3 style="color: #555; font-size: 16px; margin: 20px 0 16px;">C. 商业化潜力</h3>
+        <h3 style="color: #555; font-size: 16px; margin: 20px 0 16px;">${L.sectionC}</h3>
+        <p style="color: #888; font-size: 13px; margin: -12px 0 16px;">${L.sectionCSubtitle}</p>
         <div class="dimension-list">
-          ${renderDimensionItem('用户粘性', da.commercialPotential.userStickiness)}
-          ${renderDimensionItem('传播潜力', da.commercialPotential.viralPotential)}
+          ${renderDimensionItem(getDimensionLabel('userStickiness', lang), da.commercialPotential.userStickiness, lang)}
+          ${renderDimensionItem(getDimensionLabel('viralPotential', lang), da.commercialPotential.viralPotential, lang)}
         </div>
 
-        <h3 style="color: #555; font-size: 16px; margin: 20px 0 16px;">D. 合规性评估</h3>
+        <h3 style="color: #555; font-size: 16px; margin: 20px 0 16px;">${L.sectionD}</h3>
+        <p style="color: #888; font-size: 13px; margin: -12px 0 16px;">${L.sectionDSubtitle}</p>
         <div class="dimension-list">
-          ${renderDimensionItem('内容合规性', da.complianceAssessment.contentCompliance)}
-          ${renderDimensionItem('价值观导向', da.complianceAssessment.valueOrientation)}
+          ${renderDimensionItem(getDimensionLabel('contentCompliance', lang), da.complianceAssessment.contentCompliance, lang)}
+          ${renderDimensionItem(getDimensionLabel('valueOrientation', lang), da.complianceAssessment.valueOrientation, lang)}
         </div>
       </div>
     `;
@@ -316,11 +402,11 @@ export function generateHTMLReport(
     // 使用基础维度分析
     html += `
       <div class="section">
-        <h2 class="section-title">II. 维度分析</h2>
+        <h2 class="section-title">${L.basicDimensions}</h2>
         <div class="dimension-list">
     `;
     for (const [key, dim] of Object.entries(result.dimensions)) {
-      const label = DIMENSION_LABELS[key] || key;
+      const label = getDimensionLabel(key, lang) || DIMENSION_LABELS[key] || key;
       html += `
           <div class="dimension-item">
             <div class="dimension-header">
@@ -330,7 +416,7 @@ export function generateHTMLReport(
             <p class="dimension-analysis">${dim.analysis}</p>
             ${dim.suggestions && dim.suggestions.length > 0 ? `
               <div class="improvements">
-                <div class="improvements-title">建议</div>
+                <div class="improvements-title">${L.suggestions}</div>
                 <ul class="improvements-list">
                   ${dim.suggestions.map(s => `<li>${s}</li>`).join('')}
                 </ul>
@@ -349,7 +435,7 @@ export function generateHTMLReport(
   if (includeRecommendations && advancedResult?.actionableRecommendations?.length) {
     html += `
       <div class="section">
-        <h2 class="section-title">III. 综合可操作建议</h2>
+        <h2 class="section-title">${L.actionableRecommendations}</h2>
         ${advancedResult.actionableRecommendations.map(rec => `
           <div class="recommendation">
             <div class="recommendation-number">${rec.priority}</div>
@@ -362,18 +448,17 @@ export function generateHTMLReport(
       </div>
     `;
   } else {
-    // 使用基础改进建议
     html += `
       <div class="section">
-        <h2 class="section-title">III. 改进建议</h2>
+        <h2 class="section-title">${L.improvementSection}</h2>
         ${result.improvements.critical.length > 0 ? `
-          <h4 style="color: #dc2626; margin-bottom: 12px;">必须修改</h4>
+          <h4 style="color: #dc2626; margin-bottom: 12px;">${L.criticalChanges}</h4>
           <ul style="margin-bottom: 20px; padding-left: 20px;">
             ${result.improvements.critical.map(item => `<li style="margin-bottom: 8px;">${item}</li>`).join('')}
           </ul>
         ` : ''}
         ${result.improvements.important.length > 0 ? `
-          <h4 style="color: #f59e0b; margin-bottom: 12px;">建议修改</h4>
+          <h4 style="color: #f59e0b; margin-bottom: 12px;">${L.suggestedChanges}</h4>
           <ul style="padding-left: 20px;">
             ${result.improvements.important.map(item => `<li style="margin-bottom: 8px;">${item}</li>`).join('')}
           </ul>
@@ -387,35 +472,35 @@ export function generateHTMLReport(
   if (businessLoop) {
     html += `
       <div class="section">
-        <h2 class="section-title">IV. 商业化闭环方案</h2>
+        <h2 class="section-title">${L.businessClosedLoop}</h2>
         <div class="summary-box">
-          <div class="summary-title">目标定位</div>
+          <div class="summary-title">${L.targetPositioning}</div>
           <p class="summary-text">${businessLoop.targetPositioning}</p>
         </div>
 
         <div style="margin-bottom: 20px;">
-          <h4 style="color: #333; margin-bottom: 8px;">变现路径</h4>
+          <h4 style="color: #333; margin-bottom: 8px;">${L.monetizationPath}</h4>
           <ul style="padding-left: 20px; color: #555;">
             ${businessLoop.monetizationPath.map((item) => `<li style="margin-bottom: 6px;">${item}</li>`).join('')}
           </ul>
         </div>
 
         <div style="margin-bottom: 20px;">
-          <h4 style="color: #333; margin-bottom: 8px;">上线节奏</h4>
+          <h4 style="color: #333; margin-bottom: 8px;">${L.launchPlan}</h4>
           <ul style="padding-left: 20px; color: #555;">
             ${businessLoop.launchPlan.map((item) => `<li style="margin-bottom: 6px;">${item}</li>`).join('')}
           </ul>
         </div>
 
         <div style="margin-bottom: 20px;">
-          <h4 style="color: #333; margin-bottom: 8px;">核心KPI看板</h4>
+          <h4 style="color: #333; margin-bottom: 8px;">${L.kpiDashboard}</h4>
           <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
             <thead>
               <tr style="background: #f8fafc;">
-                <th style="border: 1px solid #e5e7eb; text-align: left; padding: 8px;">指标</th>
-                <th style="border: 1px solid #e5e7eb; text-align: left; padding: 8px;">目标</th>
-                <th style="border: 1px solid #e5e7eb; text-align: left; padding: 8px;">周期</th>
-                <th style="border: 1px solid #e5e7eb; text-align: left; padding: 8px;">负责人</th>
+                <th style="border: 1px solid #e5e7eb; text-align: left; padding: 8px;">${L.kpiMetric}</th>
+                <th style="border: 1px solid #e5e7eb; text-align: left; padding: 8px;">${L.kpiTarget}</th>
+                <th style="border: 1px solid #e5e7eb; text-align: left; padding: 8px;">${L.kpiWindow}</th>
+                <th style="border: 1px solid #e5e7eb; text-align: left; padding: 8px;">${L.kpiOwner}</th>
               </tr>
             </thead>
             <tbody>
@@ -432,21 +517,21 @@ export function generateHTMLReport(
         </div>
 
         <div style="margin-bottom: 20px;">
-          <h4 style="color: #333; margin-bottom: 8px;">验证实验</h4>
+          <h4 style="color: #333; margin-bottom: 8px;">${L.validationExperiments}</h4>
           <ul style="padding-left: 20px; color: #555;">
             ${businessLoop.validationExperiments.map((item) => `<li style="margin-bottom: 6px;">${item}</li>`).join('')}
           </ul>
         </div>
 
         <div style="margin-bottom: 20px;">
-          <h4 style="color: #333; margin-bottom: 8px;">风险与兜底</h4>
+          <h4 style="color: #333; margin-bottom: 8px;">${L.riskMitigation}</h4>
           <ul style="padding-left: 20px; color: #555;">
             ${businessLoop.riskMitigation.map((item) => `<li style="margin-bottom: 6px;">${item}</li>`).join('')}
           </ul>
         </div>
 
         <div class="summary-box">
-          <div class="summary-title">下一季度目标</div>
+          <div class="summary-title">${L.nextQuarterGoal}</div>
           <p class="summary-text">${businessLoop.nextQuarterGoal}</p>
         </div>
       </div>
@@ -457,8 +542,8 @@ export function generateHTMLReport(
     </div>
 
     <div class="footer">
-      <p>本报告由 AI 剧本评级系统自动生成</p>
-      <p>评估仅供参考，不构成投资建议</p>
+      <p>${L.footerLine1}</p>
+      <p>${L.footerLine2}</p>
     </div>
   </div>
 </body>
@@ -471,11 +556,14 @@ export function generateHTMLReport(
 /** 渲染单个维度分析项 */
 function renderDimensionItem(
   name: string,
-  data: { score: number; grade: string; analysis: string; improvements: string[] }
+  data: DimensionDetailedAnalysis,
+  lang: OutputLanguage = 'zh'
 ): string {
+  const L = getLabels(lang);
   const gradeClass = data.grade.startsWith('S') ? 'grade-s' :
                      data.grade.startsWith('A') ? 'grade-a' :
                      data.grade.startsWith('B') ? 'grade-b' : 'grade-c';
+  const gradeText = lang === 'en' ? data.grade : `${data.grade}${L.gradeUnit}`;
 
   return `
     <div class="dimension-item">
@@ -483,13 +571,37 @@ function renderDimensionItem(
         <span class="dimension-name">${name}</span>
         <span>
           <span class="dimension-score">${data.score}/100</span>
-          <span class="dimension-grade ${gradeClass}">${data.grade}级</span>
+          <span class="dimension-grade ${gradeClass}">${gradeText}</span>
         </span>
       </div>
-      <p class="dimension-analysis">${data.analysis}</p>
+      <p class="dimension-analysis">${data.analysis || L.noAnalysis}</p>
+      ${data.keyFindings && data.keyFindings.length > 0 ? `
+        <div class="key-findings">
+          <div class="key-findings-title">${L.keyFindingsTitle}</div>
+          <ul class="key-findings-list">
+            ${data.keyFindings.map(item => `<li>${item}</li>`).join('')}
+          </ul>
+        </div>
+      ` : ''}
+      ${data.evidence && data.evidence.length > 0 ? `
+        <div class="evidence-section">
+          <div class="evidence-title">${L.evidenceTitle}</div>
+          <ul class="evidence-list">
+            ${data.evidence.map(item => `<li>${item}</li>`).join('')}
+          </ul>
+        </div>
+      ` : ''}
+      ${data.strengths && data.strengths.length > 0 ? `
+        <div class="strengths">
+          <div class="strengths-title">${L.strengthsTitle}</div>
+          <ul class="strengths-list">
+            ${data.strengths.map(item => `<li>${item}</li>`).join('')}
+          </ul>
+        </div>
+      ` : ''}
       ${data.improvements && data.improvements.length > 0 ? `
         <div class="improvements">
-          <div class="improvements-title">可打磨点</div>
+          <div class="improvements-title">${L.improvementsTitle}</div>
           <ul class="improvements-list">
             ${data.improvements.map(item => `<li>${item}</li>`).join('')}
           </ul>
@@ -510,44 +622,47 @@ export function generateMarkdownReport(
     includeDetailedAnalysis = true,
     includeRecommendations = true,
     scriptName = '未命名剧本',
+    language = 'zh',
   } = options;
 
+  // 标签始终使用中文
+  const lang: OutputLanguage = 'zh';
+  const L = getLabels(lang);
   const gradeConfig = GRADE_CONFIG[result.overallGrade as GradeLevel];
   const now = new Date().toLocaleDateString('zh-CN');
 
-  let md = `# AI智能诊断｜商业适配度·结构风险·变现潜力
+  let md = `# ${L.reportTitle}
 
-**剧本名称：** ${scriptName}
-**生成日期：** ${now}
+**${L.scriptLabel}:** ${scriptName}
+**${L.dateLabel}:** ${now}
 
 ---
 
-## 总体潜力评分：${result.overallScore.toFixed(0)}/100（${result.overallGrade}级）
-
-**评级：** ${gradeConfig.label}
+## ${L.overallScoreLabel}: ${result.overallScore.toFixed(0)}/100 (${getGradeLabel(result.overallGrade, lang)})
 
 `;
 
   // 执行摘要
   if (includeSummary && advancedResult?.executiveSummary) {
     const summary = advancedResult.executiveSummary;
-    md += `## I. 执行摘要
+    const themeSep = '、';
+    md += `## ${L.executiveSummary}
 
-**频类：** ${summary.genre}
-**题材：** ${summary.themes.join('、')}
-**一句话介绍：** ${summary.oneSentence}
+**${L.genreLabel}:** ${summary.genre}
+**${L.themesLabel}:** ${summary.themes.join(themeSep)}
+**${L.oneSentenceLabel}:** ${summary.oneSentence}
 
-### 剧情主线
+### ${L.plotSummaryLabel}
 ${summary.plotSummary}
 
-### 核心结论
+### ${L.coreConclusion}
 ${summary.coreConclusion}
 
 `;
   } else {
-    md += `## I. 执行摘要
+    md += `## ${L.executiveSummary}
 
-**一句话总评：** ${result.summary.oneSentence}
+**${L.oneSentenceSummary}:** ${result.summary.oneSentence}
 
 ${result.summary.paragraph}
 
@@ -558,41 +673,41 @@ ${result.summary.paragraph}
   if (includeDetailedAnalysis && advancedResult?.detailedAnalysis) {
     const da = advancedResult.detailedAnalysis;
 
-    md += `## II. 详细分析
+    md += `## ${L.detailedAnalysis}
 
-### A. 市场共鸣与竞争定位
+### ${L.sectionA}
 
-${renderMarkdownDimension('目标受众定位', da.marketResonance.targetAudience)}
-${renderMarkdownDimension('原创性评分', da.marketResonance.originality)}
-${renderMarkdownDimension('当下热播契合度', da.marketResonance.trendAlignment)}
+${renderMarkdownDimension(getDimensionLabel('targetAudience', lang), da.marketResonance.targetAudience, lang)}
+${renderMarkdownDimension(getDimensionLabel('originality', lang), da.marketResonance.originality, lang)}
+${renderMarkdownDimension(getDimensionLabel('trendAlignment', lang), da.marketResonance.trendAlignment, lang)}
 
-### B. 叙事与剧本基因
+### ${L.sectionB}
 
-${renderMarkdownDimension('叙事逻辑', da.narrativeDNA.narrativeLogic)}
-${renderMarkdownDimension('钩子强度', da.narrativeDNA.hookStrength)}
-${renderMarkdownDimension('爽点设计', da.narrativeDNA.pleasureDesign)}
-${renderMarkdownDimension('节奏与结构', da.narrativeDNA.pacingStructure)}
-${renderMarkdownDimension('主线连贯性', da.narrativeDNA.plotCoherence)}
-${renderMarkdownDimension('人物塑造', da.narrativeDNA.characterization)}
-${renderMarkdownDimension('对白质量', da.narrativeDNA.dialogueQuality)}
-${renderMarkdownDimension('悬念有效性', da.narrativeDNA.suspenseEffectiveness)}
+${renderMarkdownDimension(getDimensionLabel('narrativeLogic', lang), da.narrativeDNA.narrativeLogic, lang)}
+${renderMarkdownDimension(getDimensionLabel('hookStrength', lang), da.narrativeDNA.hookStrength, lang)}
+${renderMarkdownDimension(getDimensionLabel('pleasureDesign', lang), da.narrativeDNA.pleasureDesign, lang)}
+${renderMarkdownDimension(getDimensionLabel('pacingStructure', lang), da.narrativeDNA.pacingStructure, lang)}
+${renderMarkdownDimension(getDimensionLabel('plotCoherence', lang), da.narrativeDNA.plotCoherence, lang)}
+${renderMarkdownDimension(getDimensionLabel('characterization', lang), da.narrativeDNA.characterization, lang)}
+${renderMarkdownDimension(getDimensionLabel('dialogueQuality', lang), da.narrativeDNA.dialogueQuality, lang)}
+${renderMarkdownDimension(getDimensionLabel('suspenseEffectiveness', lang), da.narrativeDNA.suspenseEffectiveness, lang)}
 
-### C. 商业化潜力
+### ${L.sectionC}
 
-${renderMarkdownDimension('用户粘性', da.commercialPotential.userStickiness)}
-${renderMarkdownDimension('传播潜力', da.commercialPotential.viralPotential)}
+${renderMarkdownDimension(getDimensionLabel('userStickiness', lang), da.commercialPotential.userStickiness, lang)}
+${renderMarkdownDimension(getDimensionLabel('viralPotential', lang), da.commercialPotential.viralPotential, lang)}
 
-### D. 合规性评估
+### ${L.sectionD}
 
-${renderMarkdownDimension('内容合规性', da.complianceAssessment.contentCompliance)}
-${renderMarkdownDimension('价值观导向', da.complianceAssessment.valueOrientation)}
+${renderMarkdownDimension(getDimensionLabel('contentCompliance', lang), da.complianceAssessment.contentCompliance, lang)}
+${renderMarkdownDimension(getDimensionLabel('valueOrientation', lang), da.complianceAssessment.valueOrientation, lang)}
 
 `;
   }
 
   // 可操作建议
   if (includeRecommendations && advancedResult?.actionableRecommendations?.length) {
-    md += `## III. 综合可操作建议
+    md += `## ${L.actionableRecommendations}
 
 `;
     advancedResult.actionableRecommendations.forEach(rec => {
@@ -606,27 +721,31 @@ ${rec.description}
 
   const businessLoop = advancedResult?.finalSummary?.businessClosedLoop;
   if (businessLoop) {
-    md += `## IV. 商业化闭环方案
+    const kpiSep = '｜';
+    const kpiTargetLabel = '目标';
+    const kpiWindowLabel = '周期';
+    const kpiOwnerLabel = '负责人';
+    md += `## ${L.businessClosedLoop}
 
-### 目标定位
+### ${L.targetPositioning}
 ${businessLoop.targetPositioning}
 
-### 变现路径
+### ${L.monetizationPath}
 ${businessLoop.monetizationPath.map((item) => `- ${item}`).join('\n')}
 
-### 上线节奏
+### ${L.launchPlan}
 ${businessLoop.launchPlan.map((item) => `- ${item}`).join('\n')}
 
-### 核心KPI看板
-${businessLoop.kpiDashboard.map((kpi) => `- ${kpi.metric}｜目标：${kpi.target}｜周期：${kpi.window}${kpi.owner ? `｜负责人：${kpi.owner}` : ''}`).join('\n')}
+### ${L.kpiDashboard}
+${businessLoop.kpiDashboard.map((kpi) => `- ${kpi.metric}${kpiSep}${kpiTargetLabel}: ${kpi.target}${kpiSep}${kpiWindowLabel}: ${kpi.window}${kpi.owner ? `${kpiSep}${kpiOwnerLabel}: ${kpi.owner}` : ''}`).join('\n')}
 
-### 验证实验
+### ${L.validationExperiments}
 ${businessLoop.validationExperiments.map((item) => `- ${item}`).join('\n')}
 
-### 风险与兜底
+### ${L.riskMitigation}
 ${businessLoop.riskMitigation.map((item) => `- ${item}`).join('\n')}
 
-### 下一季度目标
+### ${L.nextQuarterGoal}
 ${businessLoop.nextQuarterGoal}
 
 `;
@@ -634,7 +753,7 @@ ${businessLoop.nextQuarterGoal}
 
   md += `---
 
-*本报告由 AI 剧本评级系统自动生成，评估仅供参考，不构成投资建议。*
+*${L.footerLine1}. ${L.footerLine2}*
 `;
 
   return md;
@@ -643,17 +762,43 @@ ${businessLoop.nextQuarterGoal}
 /** 渲染 Markdown 维度分析 */
 function renderMarkdownDimension(
   name: string,
-  data: { score: number; grade: string; analysis: string; improvements: string[] }
+  data: DimensionDetailedAnalysis,
+  lang: OutputLanguage = 'zh'
 ): string {
-  let md = `#### ${name}
-**评分：** ${data.score}/100（${data.grade}级）
+  const L = getLabels(lang);
+  const gradeText = lang === 'en' ? data.grade : `${data.grade}${L.gradeUnit}`;
+  const scoreLabel = lang === 'en' ? 'Score' : '评分';
 
-${data.analysis}
+  let md = `#### ${name}
+**${scoreLabel}:** ${data.score}/100 (${gradeText})
+
+${data.analysis || L.noAnalysis}
 
 `;
 
+  if (data.keyFindings && data.keyFindings.length > 0) {
+    md += `**${L.keyFindingsTitle}:**
+${data.keyFindings.map(item => `- ${item}`).join('\n')}
+
+`;
+  }
+
+  if (data.evidence && data.evidence.length > 0) {
+    md += `**${L.evidenceTitle}:**
+${data.evidence.map(item => `- *${item}*`).join('\n')}
+
+`;
+  }
+
+  if (data.strengths && data.strengths.length > 0) {
+    md += `**${L.strengthsTitle}:**
+${data.strengths.map(item => `- ${item}`).join('\n')}
+
+`;
+  }
+
   if (data.improvements && data.improvements.length > 0) {
-    md += `**可打磨点：**
+    md += `**${L.improvementsTitle}:**
 ${data.improvements.map(item => `- ${item}`).join('\n')}
 
 `;
@@ -676,7 +821,7 @@ export function downloadFile(content: string, filename: string, mimeType: string
 }
 
 /** 导出 PDF（通过浏览器打印流程） */
-export function exportPDFReport(html: string, title = '剧本评级报告'): void {
+export function exportPDFReport(html: string, title = 'Script Rating Report'): void {
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
     throw new Error('浏览器阻止了弹窗，请允许弹窗后重试导出 PDF');
@@ -699,7 +844,9 @@ export function exportRatingReport(
   options: Partial<ExportOptions> = {}
 ): void {
   const format = options.format || 'html';
-  const scriptName = options.scriptName || '剧本评级报告';
+  const lang: OutputLanguage = 'zh'; // 始终中文
+  const defaultName = '剧本评级报告';
+  const scriptName = options.scriptName || defaultName;
   const timestamp = new Date().toISOString().slice(0, 10);
   const filename = `${scriptName}_${timestamp}`;
 
@@ -722,5 +869,6 @@ export function printReport(
   options: Partial<ExportOptions> = {}
 ): void {
   const html = generateHTMLReport(result, advancedResult, options);
-  exportPDFReport(html, options.scriptName || '剧本评级报告');
+  const defaultName = '剧本评级报告';
+  exportPDFReport(html, options.scriptName || defaultName);
 }

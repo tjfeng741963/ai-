@@ -29,10 +29,19 @@ const PLATFORM_SUITABILITY_CONFIG = {
 
 // AI漫剧平台标签
 const AI_COMIC_PLATFORM_LABELS: Record<string, { name: string; icon: string }> = {
+  // 国内平台
   hongGuo: { name: '红果短剧', icon: '🍎' },
   fanQie: { name: '番茄短剧', icon: '🍅' },
   douyin: { name: '抖音/快手', icon: '📱' },
+  // 海外平台
   overseas: { name: '海外平台', icon: '🌍' },
+  reelShort: { name: 'ReelShort', icon: '🎬' },
+  dramaBox: { name: 'DramaBox', icon: '📦' },
+  shortMax: { name: 'ShortMax', icon: '🎥' },
+  flexTV: { name: 'FlexTV', icon: '📺' },
+  tiktok: { name: 'TikTok', icon: '🎵' },
+  youtubeShorts: { name: 'YouTube Shorts', icon: '▶️' },
+  // 通用
   shortVideo: { name: '短视频', icon: '📱' },
   longVideo: { name: '长视频', icon: '📺' },
   cinema: { name: '院线', icon: '🎬' },
@@ -435,7 +444,7 @@ export function RiskAssessment({ data }: RiskAssessmentProps) {
       )}
 
       {/* 市场风险、制作风险、平台政策风险 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start mb-6">
         <RiskCard
           title="市场风险"
           icon="📊"
@@ -500,46 +509,24 @@ export function RiskAssessment({ data }: RiskAssessmentProps) {
             <span>📝</span>
             平台特定修改建议
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {platformSpecificChanges.hongGuo && platformSpecificChanges.hongGuo.length > 0 && (
-              <div className="bg-white rounded-lg p-3">
-                <div className="flex items-center gap-1 mb-2">
-                  <span>🍎</span>
-                  <span className="text-sm font-medium text-gray-700">红果短剧</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {Object.entries(platformSpecificChanges).map(([platform, changes]) => {
+              if (!changes || changes.length === 0) return null;
+              const info = AI_COMIC_PLATFORM_LABELS[platform] || { name: platform, icon: '📌' };
+              return (
+                <div key={platform} className="bg-white rounded-lg p-3">
+                  <div className="flex items-center gap-1 mb-2">
+                    <span>{info.icon}</span>
+                    <span className="text-sm font-medium text-gray-700">{info.name}</span>
+                  </div>
+                  <ul className="space-y-1">
+                    {changes.map((change, i) => (
+                      <li key={i} className="text-xs text-gray-600">• {change}</li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="space-y-1">
-                  {platformSpecificChanges.hongGuo.map((change, i) => (
-                    <li key={i} className="text-xs text-gray-600">• {change}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {platformSpecificChanges.fanQie && platformSpecificChanges.fanQie.length > 0 && (
-              <div className="bg-white rounded-lg p-3">
-                <div className="flex items-center gap-1 mb-2">
-                  <span>🍅</span>
-                  <span className="text-sm font-medium text-gray-700">番茄短剧</span>
-                </div>
-                <ul className="space-y-1">
-                  {platformSpecificChanges.fanQie.map((change, i) => (
-                    <li key={i} className="text-xs text-gray-600">• {change}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {platformSpecificChanges.overseas && platformSpecificChanges.overseas.length > 0 && (
-              <div className="bg-white rounded-lg p-3">
-                <div className="flex items-center gap-1 mb-2">
-                  <span>🌍</span>
-                  <span className="text-sm font-medium text-gray-700">海外平台</span>
-                </div>
-                <ul className="space-y-1">
-                  {platformSpecificChanges.overseas.map((change, i) => (
-                    <li key={i} className="text-xs text-gray-600">• {change}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+              );
+            })}
           </div>
         </div>
       )}

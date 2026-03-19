@@ -7,18 +7,27 @@ interface MarketSuggestionProps {
 
 // AI漫剧平台图标映射
 const PLATFORM_ICONS: Record<string, string> = {
+  // 国内平台
   '红果短剧': '🍎',
   '红果': '🍎',
   '番茄短剧': '🍅',
   '番茄': '🍅',
   '抖音': '📱',
   '快手': '📲',
+  '抖音/快手': '📱',
+  // 海外平台
   'ReelShort': '🎬',
   'Dreame': '📖',
   'ShortMax': '🎥',
+  'DramaBox': '📦',
+  'FlexTV': '📺',
+  'TikTok': '🎵',
+  'YouTube Shorts': '▶️',
+  'YouTube': '▶️',
+  // 通用
   '海外': '🌍',
-  '抖音/快手': '📱',
   '海外(ReelShort/Dreame)': '🌍',
+  '海外平台': '🌍',
 };
 
 // 评级颜色

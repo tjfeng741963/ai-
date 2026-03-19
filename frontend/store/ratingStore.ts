@@ -14,6 +14,7 @@ import {
   updateRecordName,
   type RatingRecord,
 } from '@/services/storage.ts';
+import type { MarketType } from '@/services/market-context.ts';
 
 /** 分析模式 */
 export type AnalysisMode = 'simple' | 'advanced';
@@ -31,6 +32,8 @@ interface RatingState {
 
   // 高级分析状态
   analysisMode: AnalysisMode;
+  marketType: MarketType;
+  outputLanguage: 'zh' | 'en';
   phases: AnalysisPhase[];
   currentPhaseIndex: number;
 
@@ -45,6 +48,8 @@ interface RatingState {
   // Actions
   setScriptContent: (content: string) => void;
   setAnalysisMode: (mode: AnalysisMode) => void;
+  setMarketType: (market: MarketType) => void;
+  setOutputLanguage: (lang: 'zh' | 'en') => void;
   startAnalyzing: () => void;
   setProgress: (progress: number, step: string, phaseIndex?: number) => void;
   updatePhase: (phase: AnalysisPhase) => void;
@@ -87,6 +92,8 @@ export const useRatingStore = create<RatingState>((set, get) => ({
 
   // 高级分析状态
   analysisMode: 'advanced',
+  marketType: 'domestic' as MarketType,
+  outputLanguage: 'zh' as const,
   phases: createInitialPhases(),
   currentPhaseIndex: -1,
 
@@ -102,6 +109,10 @@ export const useRatingStore = create<RatingState>((set, get) => ({
   setScriptContent: (content) => set({ scriptContent: content }),
 
   setAnalysisMode: (mode) => set({ analysisMode: mode }),
+
+  setMarketType: (market) => set({ marketType: market }),
+
+  setOutputLanguage: (lang) => set({ outputLanguage: lang }),
 
   startAnalyzing: () =>
     set({

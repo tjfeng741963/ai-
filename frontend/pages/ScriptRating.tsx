@@ -47,6 +47,9 @@ import { exportRatingReport } from '@/services/export.ts';
 import { extractScriptName } from '@/services/storage.ts';
 import { GradeExplanation } from '@/components/ui/GradeExplanation.tsx';
 import { ModelSelector } from '@/components/ui/ModelSelector.tsx';
+import { MarketTypeSelector } from '@/components/ui/MarketTypeSelector.tsx';
+import { OutputLanguageSelector } from '@/components/ui/OutputLanguageSelector.tsx';
+import { UploadGuide } from '@/components/ui/UploadGuide.tsx';
 
 // Tab 配置
 const TABS = [
@@ -77,6 +80,10 @@ export function ScriptRating() {
     showHistory,
     setScriptContent,
     setAnalysisMode,
+    marketType,
+    setMarketType,
+    outputLanguage,
+    setOutputLanguage,
     startAnalyzing,
     setProgress,
     updatePhase,
@@ -128,16 +135,21 @@ export function ScriptRating() {
           },
           (phase) => {
             updatePhase(phase);
-          }
+          },
+          undefined,
+          marketType,
+          outputLanguage
         );
         // 设置基础结果和高级结果
         setResult({
           overallScore: result.overallScore,
           overallGrade: result.overallGrade,
+          gradeLabel: result.gradeLabel ?? '',
           dimensions: result.dimensions,
           summary: result.summary,
           highlights: result.highlights,
           improvements: result.improvements,
+          risks: result.risks ?? { compliance: [], market: [], production: [] },
         });
         setAdvancedResult(result);
       } else {
@@ -208,6 +220,18 @@ export function ScriptRating() {
               </button>
             </div>
 
+            {/* 分隔线 */}
+            <div className="w-px h-8 bg-gray-200" />
+
+            {/* 市场选择器 */}
+            <MarketTypeSelector value={marketType} onChange={setMarketType} compact />
+
+            {/* 语言选择器 */}
+            <OutputLanguageSelector value={outputLanguage} onChange={setOutputLanguage} compact />
+
+            {/* 分隔线 */}
+            <div className="w-px h-8 bg-gray-200" />
+
             {/* 模型选择器 */}
             <ModelSelector compact />
 
@@ -255,17 +279,26 @@ export function ScriptRating() {
                   value={scriptContent}
                   onChange={(e) => setScriptContent(e.target.value)}
                   placeholder="请粘贴剧本内容，或上传 .txt / .md 文件...&#10;&#10;支持的格式：&#10;- 标准剧本格式（场景、人物、对白）&#10;- 小说稿/故事大纲&#10;- 分集大纲"
-                  className="w-full h-[450px] p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none resize-none text-sm leading-relaxed"
+                  className="w-full h-[500px] p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none resize-none text-sm leading-relaxed"
                 />
                 <div className="flex items-center justify-between mt-4">
-                  <span className="text-sm text-gray-500">
-                    {scriptContent.length.toLocaleString()} 字
-                    {scriptContent.length > 0 && scriptContent.length < 500 && (
-                      <span className="ml-2 text-amber-500">
-                        (建议至少 500 字以获得更准确的分析)
-                      </span>
-                    )}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-500">
+                      {scriptContent.length.toLocaleString()} 字
+                      {scriptContent.length > 0 && scriptContent.length < 500 && (
+                        <span className="ml-2 text-amber-500">
+                          (建议至少 500 字以获得更准确的分析)
+                        </span>
+                      )}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      marketType === 'domestic'
+                        ? 'bg-red-50 text-red-600 border border-red-200'
+                        : 'bg-blue-50 text-blue-600 border border-blue-200'
+                    }`}>
+                      {marketType === 'domestic' ? '🇨🇳 国内市场' : '🌏 出海市场'}
+                    </span>
+                  </div>
                   <div className="flex gap-2">
                     {scriptContent && (
                       <button
@@ -344,53 +377,7 @@ export function ScriptRating() {
                   <p className="text-sm text-gray-500 mt-2">{progress}%</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-                  <h3 className="font-semibold text-gray-800 mb-4">
-                    {analysisMode === 'advanced' ? '深度分析模式' : '快速分析模式'}
-                  </h3>
-                  {analysisMode === 'advanced' ? (
-                    <ul className="space-y-3 text-sm text-gray-600">
-                      <li className="flex items-start gap-2">
-                        <Layers className="w-4 h-4 text-indigo-500 mt-0.5" />
-                        <span>5轮递进式分析：结构→人物→情感→市场→合规</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Users className="w-4 h-4 text-indigo-500 mt-0.5" />
-                        <span>人物关系网络图可视化</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Activity className="w-4 h-4 text-indigo-500 mt-0.5" />
-                        <span>情绪曲线与爽点分析</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <TrendingUp className="w-4 h-4 text-indigo-500 mt-0.5" />
-                        <span>市场建议：定价、平台、营销</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Clapperboard className="w-4 h-4 text-indigo-500 mt-0.5" />
-                        <span>制作可行性与预算评估</span>
-                      </li>
-                    </ul>
-                  ) : (
-                    <ul className="space-y-3 text-sm text-gray-600">
-                      <li className="flex items-start gap-2">
-                        <BarChart3 className="w-4 h-4 text-indigo-500 mt-0.5" />
-                        <span>16维度综合评分</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-indigo-500 mt-0.5" />
-                        <span>核心亮点与改进建议</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Target className="w-4 h-4 text-indigo-500 mt-0.5" />
-                        <span>雷达图可视化</span>
-                      </li>
-                    </ul>
-                  )}
-                  <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-400">
-                    预计分析时间：{analysisMode === 'advanced' ? '2-3分钟' : '30-60秒'}
-                  </div>
-                </div>
+                <UploadGuide analysisMode={analysisMode} />
               )}
             </div>
           </div>
@@ -445,6 +432,7 @@ export function ScriptRating() {
                         exportRatingReport(result!, advancedResult || undefined, {
                           format: 'html',
                           scriptName,
+                          language: outputLanguage,
                           includeSummary: true,
                           includeDetailedAnalysis: true,
                           includeRecommendations: true,
@@ -461,6 +449,7 @@ export function ScriptRating() {
                         exportRatingReport(result!, advancedResult || undefined, {
                           format: 'markdown',
                           scriptName,
+                          language: outputLanguage,
                           includeSummary: true,
                           includeDetailedAnalysis: true,
                           includeRecommendations: true,
@@ -477,6 +466,7 @@ export function ScriptRating() {
                         exportRatingReport(result!, advancedResult || undefined, {
                           format: 'pdf',
                           scriptName,
+                          language: outputLanguage,
                           includeSummary: true,
                           includeDetailedAnalysis: true,
                           includeRecommendations: true,
@@ -568,7 +558,7 @@ export function ScriptRating() {
                         <span className={`
                           px-3 py-1.5 rounded-full text-sm font-bold shadow-sm
                           ${result.overallGrade === 'S' ? 'bg-amber-500 text-white' : ''}
-                          ${result.overallGrade === 'A+' ? 'bg-purple-500 text-white' : ''}
+
                           ${result.overallGrade === 'A' ? 'bg-indigo-500 text-white' : ''}
                           ${result.overallGrade === 'B' ? 'bg-blue-500 text-white' : ''}
                           ${result.overallGrade === 'C' ? 'bg-gray-500 text-white' : ''}
@@ -634,6 +624,8 @@ export function ScriptRating() {
                   <DetailedAnalysisPanel
                     detailedAnalysis={advancedResult.detailedAnalysis}
                     actionableRecommendations={advancedResult.actionableRecommendations || []}
+                    finalSummary={advancedResult.finalSummary}
+                    outputLanguage={outputLanguage}
                   />
                 </motion.div>
               )}
@@ -702,7 +694,7 @@ export function ScriptRating() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+                  className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start"
                 >
                   <MarketSuggestion data={advancedResult.marketSuggestion} />
                   {advancedResult.productionFeasibility && (
@@ -773,7 +765,7 @@ function RatingResultPanel({
   const gradeConfig = GRADE_CONFIG[result.overallGrade as GradeLevel];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       {/* 左列 */}
       <div className="space-y-6">
         {/* 总评卡片 */}
