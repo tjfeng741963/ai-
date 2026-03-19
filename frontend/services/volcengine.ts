@@ -1215,7 +1215,7 @@ export async function analyzeScriptDetailed(
       SCRIPT_CONTENT: scriptContent,
     });
 
-    const productionResult = await callAndExtractJSON<{ productionAnalysis: DetailedAnalysisResult['productionAnalysis'] }>(
+    result.productionAnalysis = await callAndExtractJSON<NonNullable<DetailedAnalysisResult['productionAnalysis']>>(
       [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: productionPrompt },
@@ -1223,7 +1223,6 @@ export async function analyzeScriptDetailed(
       detailedOptions,
       '制作分析'
     );
-    result.productionAnalysis = productionResult.productionAnalysis;
 
     updatePhase(0, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[0], result.productionAnalysis);
@@ -1239,7 +1238,7 @@ export async function analyzeScriptDetailed(
       PRODUCTION_DATA: JSON.stringify(result.productionAnalysis, null, 2),
     });
 
-    const executiveResult = await callAndExtractJSON<{ executiveSummary: DetailedAnalysisResult['executiveSummary']; quickAssessment?: unknown }>(
+    result.executiveSummary = await callAndExtractJSON<NonNullable<DetailedAnalysisResult['executiveSummary']>>(
       [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: executivePrompt },
@@ -1247,7 +1246,6 @@ export async function analyzeScriptDetailed(
       detailedOptions,
       '执行摘要'
     );
-    result.executiveSummary = executiveResult.executiveSummary;
 
     updatePhase(1, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[1], result.executiveSummary);
@@ -1262,7 +1260,7 @@ export async function analyzeScriptDetailed(
       SCRIPT_CONTENT: scriptContent,
     });
 
-    const structureResult = await callAndExtractJSON<{ structureAnalysis: StructureAnalysis }>(
+    result.structureAnalysis = await callAndExtractJSON<StructureAnalysis>(
       [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: structurePrompt },
@@ -1270,7 +1268,6 @@ export async function analyzeScriptDetailed(
       detailedOptions,
       '结构分析'
     );
-    result.structureAnalysis = structureResult.structureAnalysis;
 
     updatePhase(2, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[2], result.structureAnalysis);
@@ -1285,7 +1282,7 @@ export async function analyzeScriptDetailed(
       SCRIPT_CONTENT: scriptContent,
     });
 
-    const characterResult = await callAndExtractJSON<{ characterAnalysis: CharacterAnalysis }>(
+    result.characterAnalysis = await callAndExtractJSON<CharacterAnalysis>(
       [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: characterPrompt },
@@ -1293,7 +1290,6 @@ export async function analyzeScriptDetailed(
       detailedOptions,
       '人物分析'
     );
-    result.characterAnalysis = characterResult.characterAnalysis;
 
     updatePhase(3, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[3], result.characterAnalysis);
@@ -1308,7 +1304,7 @@ export async function analyzeScriptDetailed(
       SCRIPT_CONTENT: scriptContent,
     });
 
-    const emotionResult = await callAndExtractJSON<{ emotionAnalysis: EmotionAnalysis }>(
+    result.emotionAnalysis = await callAndExtractJSON<EmotionAnalysis>(
       [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: emotionPrompt },
@@ -1316,7 +1312,6 @@ export async function analyzeScriptDetailed(
       detailedOptions,
       '情感分析'
     );
-    result.emotionAnalysis = emotionResult.emotionAnalysis;
 
     updatePhase(4, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[4], result.emotionAnalysis);
@@ -1331,7 +1326,7 @@ export async function analyzeScriptDetailed(
       SCRIPT_CONTENT: scriptContent,
     });
 
-    const marketResonanceResult = await callAndExtractJSON<{ marketResonance: MarketResonanceAnalysis }>(
+    result.marketResonance = await callAndExtractJSON<MarketResonanceAnalysis>(
       [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: marketResonancePrompt },
@@ -1339,7 +1334,6 @@ export async function analyzeScriptDetailed(
       detailedOptions,
       '市场共鸣'
     );
-    result.marketResonance = marketResonanceResult.marketResonance;
 
     updatePhase(5, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[5], result.marketResonance);
@@ -1354,7 +1348,7 @@ export async function analyzeScriptDetailed(
       SCRIPT_CONTENT: scriptContent,
     });
 
-    const marketResult = await callAndExtractJSON<{ marketSuggestion: MarketSuggestion }>(
+    result.marketSuggestion = await callAndExtractJSON<MarketSuggestion>(
       [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: marketPrompt },
@@ -1362,7 +1356,6 @@ export async function analyzeScriptDetailed(
       detailedOptions,
       '市场定价'
     );
-    result.marketSuggestion = marketResult.marketSuggestion;
 
     updatePhase(6, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[6], result.marketSuggestion);
@@ -1377,7 +1370,7 @@ export async function analyzeScriptDetailed(
       SCRIPT_CONTENT: scriptContent,
     });
 
-    const narrativeResult = await callAndExtractJSON<{ narrativeDNA: NarrativeDNAAnalysis }>(
+    result.narrativeDNA = await callAndExtractJSON<NarrativeDNAAnalysis>(
       [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: narrativePrompt },
@@ -1385,7 +1378,6 @@ export async function analyzeScriptDetailed(
       detailedOptions,
       '叙事基因'
     );
-    result.narrativeDNA = narrativeResult.narrativeDNA;
 
     updatePhase(7, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[7], result.narrativeDNA);
@@ -1402,7 +1394,7 @@ export async function analyzeScriptDetailed(
       COMMERCIAL_DATA: '商业合规分析将在后续阶段完成后提供',
     });
 
-    const riskResult = await callAndExtractJSON<{ riskAssessment: RiskAssessment }>(
+    result.riskAssessment = await callAndExtractJSON<RiskAssessment>(
       [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: riskPrompt },
@@ -1410,7 +1402,6 @@ export async function analyzeScriptDetailed(
       detailedOptions,
       '风险评估'
     );
-    result.riskAssessment = riskResult.riskAssessment;
 
     updatePhase(8, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[8], result.riskAssessment);
@@ -1425,10 +1416,7 @@ export async function analyzeScriptDetailed(
       SCRIPT_CONTENT: scriptContent,
     });
 
-    const commercialResult = await callAndExtractJSON<{
-      commercialPotential: CommercialPotentialAnalysis;
-      complianceAssessment: ComplianceAssessmentAnalysis;
-    }>(
+    const commercialRaw = await callAndExtractJSON<Record<string, unknown>>(
       [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: commercialPrompt },
@@ -1436,8 +1424,14 @@ export async function analyzeScriptDetailed(
       detailedOptions,
       '商业合规'
     );
-    result.commercialPotential = commercialResult.commercialPotential;
-    result.complianceAssessment = commercialResult.complianceAssessment;
+    result.commercialPotential = {
+      userStickiness: commercialRaw.userStickiness,
+      viralPotential: commercialRaw.viralPotential,
+    } as CommercialPotentialAnalysis;
+    result.complianceAssessment = {
+      contentCompliance: commercialRaw.contentCompliance,
+      valueOrientation: commercialRaw.valueOrientation,
+    } as ComplianceAssessmentAnalysis;
 
     updatePhase(9, { status: 'completed', endTime: Date.now() });
     onPhaseComplete?.(phases[9], { commercialPotential: result.commercialPotential, complianceAssessment: result.complianceAssessment });
@@ -1596,6 +1590,13 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
   weaknesses?: string[];
   suggestions?: string[];
 }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getAnalysis = (dim: any): string =>
+    dim.analysis ?? (Array.isArray(dim.findings) ? dim.findings.join('；') : '');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getSuggestions = (dim: any): string[] =>
+    dim.improvements ?? dim.suggestions ?? [];
+
   const dimensions: Record<string, {
     score: number;
     weight: number;
@@ -1615,8 +1616,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.10,
         weighted: score * 0.10,
-        analysis: nd.hookStrength.analysis,
-        suggestions: nd.hookStrength.improvements,
+        analysis: getAnalysis(nd.hookStrength),
+        suggestions: getSuggestions(nd.hookStrength),
       };
     }
     if (nd.pleasureDesign) {
@@ -1625,8 +1626,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.12,
         weighted: score * 0.12,
-        analysis: nd.pleasureDesign.analysis,
-        suggestions: nd.pleasureDesign.improvements,
+        analysis: getAnalysis(nd.pleasureDesign),
+        suggestions: getSuggestions(nd.pleasureDesign),
       };
     }
     if (nd.pacingStructure) {
@@ -1635,8 +1636,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.08,
         weighted: score * 0.08,
-        analysis: nd.pacingStructure.analysis,
-        suggestions: nd.pacingStructure.improvements,
+        analysis: getAnalysis(nd.pacingStructure),
+        suggestions: getSuggestions(nd.pacingStructure),
       };
     }
     if (nd.suspenseEffectiveness) {
@@ -1645,8 +1646,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.06,
         weighted: score * 0.06,
-        analysis: nd.suspenseEffectiveness.analysis,
-        suggestions: nd.suspenseEffectiveness.improvements,
+        analysis: getAnalysis(nd.suspenseEffectiveness),
+        suggestions: getSuggestions(nd.suspenseEffectiveness),
       };
     }
     if (nd.characterization) {
@@ -1655,8 +1656,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.08,
         weighted: score * 0.08,
-        analysis: nd.characterization.analysis,
-        suggestions: nd.characterization.improvements,
+        analysis: getAnalysis(nd.characterization),
+        suggestions: getSuggestions(nd.characterization),
       };
     }
     if (nd.dialogueQuality) {
@@ -1665,8 +1666,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.06,
         weighted: score * 0.06,
-        analysis: nd.dialogueQuality.analysis,
-        suggestions: nd.dialogueQuality.improvements,
+        analysis: getAnalysis(nd.dialogueQuality),
+        suggestions: getSuggestions(nd.dialogueQuality),
       };
     }
     if (nd.plotCoherence) {
@@ -1675,8 +1676,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.06,
         weighted: score * 0.06,
-        analysis: nd.plotCoherence.analysis,
-        suggestions: nd.plotCoherence.improvements,
+        analysis: getAnalysis(nd.plotCoherence),
+        suggestions: getSuggestions(nd.plotCoherence),
       };
     }
     if (nd.narrativeLogic) {
@@ -1685,8 +1686,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.08,
         weighted: score * 0.08,
-        analysis: nd.narrativeLogic.analysis,
-        suggestions: nd.narrativeLogic.improvements,
+        analysis: getAnalysis(nd.narrativeLogic),
+        suggestions: getSuggestions(nd.narrativeLogic),
       };
     }
   }
@@ -1700,8 +1701,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.05,
         weighted: score * 0.05,
-        analysis: mr.targetAudience.analysis,
-        suggestions: mr.targetAudience.improvements,
+        analysis: getAnalysis(mr.targetAudience),
+        suggestions: getSuggestions(mr.targetAudience),
       };
     }
     if (mr.originality) {
@@ -1710,8 +1711,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.025,
         weighted: score * 0.025,
-        analysis: mr.originality.analysis,
-        suggestions: mr.originality.improvements,
+        analysis: getAnalysis(mr.originality),
+        suggestions: getSuggestions(mr.originality),
       };
     }
     if (mr.trendAlignment) {
@@ -1720,8 +1721,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.05,
         weighted: score * 0.05,
-        analysis: mr.trendAlignment.analysis,
-        suggestions: mr.trendAlignment.improvements,
+        analysis: getAnalysis(mr.trendAlignment),
+        suggestions: getSuggestions(mr.trendAlignment),
       };
     }
   }
@@ -1735,8 +1736,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.025,
         weighted: score * 0.025,
-        analysis: cp.userStickiness.analysis,
-        suggestions: cp.userStickiness.improvements,
+        analysis: getAnalysis(cp.userStickiness),
+        suggestions: getSuggestions(cp.userStickiness),
       };
     }
     if (cp.viralPotential) {
@@ -1745,8 +1746,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.05,
         weighted: score * 0.05,
-        analysis: cp.viralPotential.analysis,
-        suggestions: cp.viralPotential.improvements,
+        analysis: getAnalysis(cp.viralPotential),
+        suggestions: getSuggestions(cp.viralPotential),
       };
     }
   }
@@ -1760,8 +1761,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.04,
         weighted: score * 0.04,
-        analysis: ca.contentCompliance.analysis,
-        suggestions: ca.contentCompliance.improvements,
+        analysis: getAnalysis(ca.contentCompliance),
+        suggestions: getSuggestions(ca.contentCompliance),
       };
     }
     if (ca.valueOrientation) {
@@ -1770,8 +1771,8 @@ function buildDimensionsFromDetailedAnalysis(result: DetailedAnalysisResult): Re
         score,
         weight: 0.02,
         weighted: score * 0.02,
-        analysis: ca.valueOrientation.analysis,
-        suggestions: ca.valueOrientation.improvements,
+        analysis: getAnalysis(ca.valueOrientation),
+        suggestions: getSuggestions(ca.valueOrientation),
       };
     }
   }
