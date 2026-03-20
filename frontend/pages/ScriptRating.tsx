@@ -955,9 +955,6 @@ function DimensionItem({
             {dimension.score.toFixed(1)}
           </span>
           <span className="font-medium text-gray-700">{label}</span>
-          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
-            权重 {(dimension.weight * 100).toFixed(1)}%
-          </span>
         </div>
         {isExpanded ? (
           <ChevronUp className="w-4 h-4 text-gray-400" />

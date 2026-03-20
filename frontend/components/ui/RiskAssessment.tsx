@@ -335,8 +335,8 @@ export function RiskAssessment({ data }: RiskAssessmentProps) {
                   {/* 如果是详细格式，显示问题 */}
                   {isPlatformComplianceStatus(statusOrDetailed) && statusOrDetailed.issues.length > 0 && (
                     <div className="mt-2 text-xs text-gray-500">
-                      {statusOrDetailed.issues.slice(0, 2).map((issue, i) => (
-                        <div key={i} className="truncate">• {issue}</div>
+                      {statusOrDetailed.issues.map((issue, i) => (
+                        <div key={i}>• {issue}</div>
                       ))}
                     </div>
                   )}
@@ -358,7 +358,7 @@ export function RiskAssessment({ data }: RiskAssessmentProps) {
               valueOrientation.score >= 6 ? 'bg-yellow-200 text-yellow-700' :
               'bg-red-200 text-red-700'
             }`}>
-              {valueOrientation.score}/10
+              {Math.min(valueOrientation.score, 10)}/10
             </span>
           </h4>
           <div className="text-sm text-gray-700 mb-2">
