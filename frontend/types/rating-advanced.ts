@@ -506,10 +506,11 @@ export const ANALYSIS_PHASES: Array<{ id: string; name: string; weight: number }
 
 /** 执行摘要 */
 export interface ExecutiveSummary {
-  genre: '男频' | '女频' | '中性';
-  subGenre?: string;         // 子类型：逆袭|甜宠|虐恋|玄幻|都市|重生|穿越|职场
-  themes: string[];          // 题材标签
+  genre: '男频' | '女频' | '中性' | '全民';
+  subGenre?: string;         // 子类型：都市逆袭|古装权谋|玄幻修仙|现代甜宠|重生复仇...
+  themes: string[];          // 题材标签（3-6个混搭）
   platformTags?: string[];   // 平台推荐标签
+  overseasTags?: string[];   // 出海标签（英文）
   oneSentence: string;       // 一句话介绍
   plotSummary: string;       // 剧情主线概述
   coreConclusion: string;    // 核心结论

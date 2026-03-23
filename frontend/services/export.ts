@@ -328,7 +328,10 @@ export function generateHTMLReport(
           <div class="summary-title">${summary.oneSentence}</div>
           <div class="themes">
             <span class="theme-tag">${summary.genre}</span>
+            ${summary.subGenre ? `<span class="theme-tag">${summary.subGenre}</span>` : ''}
             ${summary.themes.map(t => `<span class="theme-tag">${t}</span>`).join('')}
+            ${(summary.platformTags ?? []).map(t => `<span class="theme-tag" style="background:#dcfce7;color:#15803d;">#${t}</span>`).join('')}
+            ${(summary.overseasTags ?? []).map(t => `<span class="theme-tag" style="background:#ffedd5;color:#c2410c;">${t}</span>`).join('')}
           </div>
         </div>
         <div style="margin-bottom: 20px;">
@@ -648,9 +651,9 @@ export function generateMarkdownReport(
     const themeSep = '、';
     md += `## ${L.executiveSummary}
 
-**${L.genreLabel}:** ${summary.genre}
+**${L.genreLabel}:** ${summary.genre}${summary.subGenre ? ` · ${summary.subGenre}` : ''}
 **${L.themesLabel}:** ${summary.themes.join(themeSep)}
-**${L.oneSentenceLabel}:** ${summary.oneSentence}
+${summary.platformTags?.length ? `**平台标签:** ${summary.platformTags.map(t => `#${t}`).join(themeSep)}\n` : ''}${summary.overseasTags?.length ? `**出海标签:** ${summary.overseasTags.join(', ')}\n` : ''}**${L.oneSentenceLabel}:** ${summary.oneSentence}
 
 ### ${L.plotSummaryLabel}
 ${summary.plotSummary}

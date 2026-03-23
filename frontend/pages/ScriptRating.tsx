@@ -554,6 +554,15 @@ export function ScriptRating() {
                             #{tag}
                           </span>
                         ))}
+                        {/* 出海标签 */}
+                        {advancedResult.executiveSummary.overseasTags?.map((tag, i) => (
+                          <span
+                            key={`overseas-${i}`}
+                            className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-sm font-medium shadow-sm border border-orange-200"
+                          >
+                            {tag}
+                          </span>
+                        ))}
                         {/* 评级标签 */}
                         <span className={`
                           px-3 py-1.5 rounded-full text-sm font-bold shadow-sm

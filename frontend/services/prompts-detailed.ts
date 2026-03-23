@@ -1,4 +1,5 @@
 import type { MarketType } from './market-context.ts';
+import { buildDomesticTagReference, buildOverseasTagReference } from './tag-library.ts';
 
 /**
  * AI漫剧剧本评级系统 - 详细分析 Prompt（渐进式输出）
@@ -8,6 +9,7 @@ import type { MarketType } from './market-context.ts';
  * - 精准要点（50-80字）+ 原文引用 > 冗长废话（300字+）
  * - 统一评分标准（0-100分 + S/A/B/C/D等级）
  * - 移除模糊格式示例，明确输出要求
+ * - 丰富标签库引导（国内 + 出海）
  */
 
 // ==================== 执行摘要 Prompt ====================
@@ -22,18 +24,27 @@ export const EXECUTIVE_SUMMARY_PROMPT = `## 任务：生成剧本执行摘要
 ## 前序制作分析数据（参考）
 {PRODUCTION_DATA}
 
+${buildDomesticTagReference()}
+
+${buildOverseasTagReference()}
+
 ## 输出要求
-1. 频类判断要准确（男频/女频/中性）
-2. 剧情主线概述要完整（200字以上）
-3. 核心结论要有深度，包含AI漫剧适配性、爆款潜力、投资建议
+1. 频类判断要准确（男频/女频/中性/全民）
+2. subGenre 从标签参考库中选取1-2个最贴合的题材标签
+3. themes 从标签参考库各分类中选取3-6个最能概括本剧本的标签（题材+人设+情感+风格混搭）
+4. platformTags 给出适合投放平台的推荐标签
+5. 如果剧本面向海外市场，额外填写 overseasTags（从 Overseas Tag Reference 中选取）
+6. 剧情主线概述要完整（200字以上）
+7. 核心结论要有深度，包含AI漫剧适配性、爆款潜力、投资建议
 
 ## 输出格式（严格JSON）
 \`\`\`json
 {
-  "genre": "男频|女频|中性",
-  "subGenre": "逆袭|甜宠|虐恋|玄幻|都市|重生|穿越|职场|仙侠|御兽",
-  "themes": ["主题标签1", "主题标签2", "主题标签3"],
+  "genre": "男频|女频|中性|全民",
+  "subGenre": "从标签库题材大类/情节模式中选取，如：都市逆袭|古装权谋|玄幻修仙|现代甜宠|重生复仇...",
+  "themes": ["标签1", "标签2", "标签3", "标签4", "标签5"],
   "platformTags": ["红果推荐标签", "抖音标签", "算法推荐标签"],
+  "overseasTags": ["English Tag 1", "Tag 2"],
   "oneSentence": "一句话卖点（20字内）",
   "plotSummary": "剧情主线概述（200字以上）：起承转合，主角目标、困境、转折、成长、结局",
   "coreConclusion": "核心结论（300字以上）：1.AI漫剧适配性评估；2.爆款潜力分析；3.核心亮点与不足；4.平台推荐建议；5.投资决策建议",
