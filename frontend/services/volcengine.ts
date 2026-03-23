@@ -1243,11 +1243,34 @@ export async function analyzeScriptDetailed(
     phases[index] = { ...phases[index], ...updates };
   };
 
-  // 计算总体进度
-  const calcTotalProgress = (currentPhase: number, phaseProgress: number) => {
-    const phaseWeight = 100 / phases.length;
-    return Math.round(currentPhase * phaseWeight + (phaseProgress / 100) * phaseWeight);
+  // 并行进度管理
+  const phaseProgressArr = new Array(phases.length).fill(0);
+  const calcProgress = () =>
+    Math.round(phaseProgressArr.reduce((s, p) => s + p, 0) / phases.length);
+
+  /** 执行单个分析阶段，自动管理状态、进度与回调 */
+  const runPhase = async <T>(
+    idx: number,
+    name: string,
+    stepDesc: string,
+    fn: () => Promise<T>,
+    postProcess?: (data: Awaited<T>) => Awaited<T>
+  ): Promise<Awaited<T>> => {
+    updatePhase(idx, { status: 'in_progress', startTime: Date.now() });
+    phaseProgressArr[idx] = 5;
+    onProgress?.(calcProgress(), name, stepDesc, idx);
+    let data = await fn();
+    if (postProcess) data = postProcess(data);
+    phaseProgressArr[idx] = 100;
+    updatePhase(idx, { status: 'completed', endTime: Date.now() });
+    onPhaseComplete?.(phases[idx], data);
+    onProgress?.(calcProgress(), name, '完成', idx, data);
+    console.log(`[详细分析] ${name} 完成`);
+    return data;
   };
+
+  const sysMsg = (content: string) => ({ role: 'system' as const, content });
+  const userMsg = (content: string) => ({ role: 'user' as const, content });
 
   // 使用的模型 ID
   const usedModelId = detailedOptions.model ?? currentModelSelection.modelId;
@@ -1255,234 +1278,111 @@ export async function analyzeScriptDetailed(
   // 结果收集
   const result: DetailedAnalysisResult = {};
 
-  console.log('[详细分析] 开始渐进式分析，共', phases.length, '个阶段');
+  console.log('[详细分析] 开始并行分析，共', phases.length, '个阶段（3波并行）');
 
   try {
-    // Round 1: AI漫剧制作分析
-    updatePhase(0, { status: 'in_progress', startTime: Date.now() });
-    onProgress?.(calcTotalProgress(0, 0), '制作分析', '分析AI生成概率和制作难度...', 0);
+    // ===== Wave 1: 8个独立阶段并行执行（只需 SCRIPT_CONTENT） =====
+    console.log('[详细分析] Wave 1: 8个独立阶段并行开始');
 
-    const productionPrompt = fillDetailedPrompt(PRODUCTION_ANALYSIS_PROMPT, {
-      SCRIPT_CONTENT: scriptContent,
-    });
+    const [
+      productionAnalysis,
+      structureAnalysis,
+      characterAnalysis,
+      emotionAnalysis,
+      marketResonance,
+      marketSuggestion,
+      narrativeDNA,
+      commercialRaw,
+    ] = await Promise.all([
+      // Round 1: 制作分析
+      runPhase(0, '制作分析', '分析AI生成概率和制作难度...', () =>
+        callAndExtractJSON<NonNullable<DetailedAnalysisResult['productionAnalysis']>>(
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(PRODUCTION_ANALYSIS_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
+          detailedOptions,
+          '制作分析'
+        )
+      ),
+      // Round 3: 结构分析
+      runPhase(2, '结构分析', '分析世界观、三幕结构、转折点...', () =>
+        callAndExtractJSON<StructureAnalysis>(
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(STRUCTURE_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
+          detailedOptions,
+          '结构分析'
+        )
+      ),
+      // Round 4: 人物分析
+      runPhase(3, '人物分析', '分析角色塑造、人物关系、金句...', () =>
+        callAndExtractJSON<CharacterAnalysis>(
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(CHARACTER_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
+          detailedOptions,
+          '人物分析'
+        )
+      ),
+      // Round 5: 情感分析
+      runPhase(4, '情感分析', '分析情绪曲线、爽点分布...', () =>
+        callAndExtractJSON<EmotionAnalysis>(
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(EMOTION_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
+          detailedOptions,
+          '情感分析'
+        )
+      ),
+      // Round 6: 市场共鸣
+      runPhase(5, '市场共鸣', '分析目标受众、原创性、热播契合度...', () =>
+        callAndExtractJSON<MarketResonanceAnalysis>(
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(MARKET_RESONANCE_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
+          detailedOptions,
+          '市场共鸣'
+        ),
+        (data) => normalizeDimensionResult(data)
+      ),
+      // Round 7: 市场定价
+      runPhase(6, '市场定价', '分析定价建议、平台推荐、收益预测...', () =>
+        callAndExtractJSON<MarketSuggestion>(
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(getMarketDetailedPrompt(marketType), { SCRIPT_CONTENT: scriptContent }))],
+          detailedOptions,
+          '市场定价'
+        )
+      ),
+      // Round 8: 叙事基因（含分块重试）
+      runPhase(7, '叙事基因', '分析叙事逻辑、钩子、爽点、节奏、人物、对白、悬念...', () =>
+        callWithSplitRetry<NarrativeDNAAnalysis>(
+          callAndExtractJSON,
+          marketSystemPrompt,
+          fillDetailedPrompt(NARRATIVE_DNA_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }),
+          detailedOptions,
+          {
+            phaseName: '叙事基因',
+            groups: NARRATIVE_SPLIT_GROUPS,
+            promptForDimensions: (dims) => buildSubGroupPrompt(dims, scriptContent, 'narrative'),
+          }
+        ),
+        (data) => normalizeDimensionResult(data)
+      ),
+      // Round 10: 商业合规（含分块重试）
+      runPhase(9, '商业合规', '分析用户粘性、传播潜力、内容合规、价值导向...', () =>
+        callWithSplitRetry<Record<string, unknown>>(
+          callAndExtractJSON,
+          marketSystemPrompt,
+          fillDetailedPrompt(COMMERCIAL_COMPLIANCE_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }),
+          detailedOptions,
+          {
+            phaseName: '商业合规',
+            groups: COMMERCIAL_SPLIT_GROUPS,
+            promptForDimensions: (dims) => buildSubGroupPrompt(dims, scriptContent, 'commercial'),
+          }
+        ),
+        (data) => normalizeDimensionResult(data)
+      ),
+    ]);
 
-    result.productionAnalysis = await callAndExtractJSON<NonNullable<DetailedAnalysisResult['productionAnalysis']>>(
-      [
-        { role: 'system', content: marketSystemPrompt },
-        { role: 'user', content: productionPrompt },
-      ],
-      detailedOptions,
-      '制作分析'
-    );
-
-    updatePhase(0, { status: 'completed', endTime: Date.now() });
-    onPhaseComplete?.(phases[0], result.productionAnalysis);
-    onProgress?.(calcTotalProgress(1, 0), '制作分析', '完成', 0, result.productionAnalysis);
-    console.log('[详细分析] Round 1 完成: 制作分析');
-
-    // Round 2: 执行摘要
-    updatePhase(1, { status: 'in_progress', startTime: Date.now() });
-    onProgress?.(calcTotalProgress(1, 0), '执行摘要', '生成执行摘要...', 1);
-
-    const executivePrompt = fillDetailedPrompt(EXECUTIVE_SUMMARY_PROMPT, {
-      SCRIPT_CONTENT: scriptContent,
-      PRODUCTION_DATA: JSON.stringify(result.productionAnalysis, null, 2),
-    });
-
-    result.executiveSummary = await callAndExtractJSON<NonNullable<DetailedAnalysisResult['executiveSummary']>>(
-      [
-        { role: 'system', content: marketSystemPrompt },
-        { role: 'user', content: executivePrompt },
-      ],
-      detailedOptions,
-      '执行摘要'
-    );
-
-    updatePhase(1, { status: 'completed', endTime: Date.now() });
-    onPhaseComplete?.(phases[1], result.executiveSummary);
-    onProgress?.(calcTotalProgress(2, 0), '执行摘要', '完成', 1, result.executiveSummary);
-    console.log('[详细分析] Round 2 完成: 执行摘要');
-
-    // Round 3: 结构分析（为"结构"Tab提供数据）
-    updatePhase(2, { status: 'in_progress', startTime: Date.now() });
-    onProgress?.(calcTotalProgress(2, 0), '结构分析', '分析世界观、三幕结构、转折点...', 2);
-
-    const structurePrompt = fillDetailedPrompt(STRUCTURE_DETAILED_PROMPT, {
-      SCRIPT_CONTENT: scriptContent,
-    });
-
-    result.structureAnalysis = await callAndExtractJSON<StructureAnalysis>(
-      [
-        { role: 'system', content: marketSystemPrompt },
-        { role: 'user', content: structurePrompt },
-      ],
-      detailedOptions,
-      '结构分析'
-    );
-
-    updatePhase(2, { status: 'completed', endTime: Date.now() });
-    onPhaseComplete?.(phases[2], result.structureAnalysis);
-    onProgress?.(calcTotalProgress(3, 0), '结构分析', '完成', 2, result.structureAnalysis);
-    console.log('[详细分析] Round 3 完成: 结构分析');
-
-    // Round 4: 人物分析（为"人物"Tab提供数据）
-    updatePhase(3, { status: 'in_progress', startTime: Date.now() });
-    onProgress?.(calcTotalProgress(3, 0), '人物分析', '分析角色塑造、人物关系、金句...', 3);
-
-    const characterPrompt = fillDetailedPrompt(CHARACTER_DETAILED_PROMPT, {
-      SCRIPT_CONTENT: scriptContent,
-    });
-
-    result.characterAnalysis = await callAndExtractJSON<CharacterAnalysis>(
-      [
-        { role: 'system', content: marketSystemPrompt },
-        { role: 'user', content: characterPrompt },
-      ],
-      detailedOptions,
-      '人物分析'
-    );
-
-    updatePhase(3, { status: 'completed', endTime: Date.now() });
-    onPhaseComplete?.(phases[3], result.characterAnalysis);
-    onProgress?.(calcTotalProgress(4, 0), '人物分析', '完成', 3, result.characterAnalysis);
-    console.log('[详细分析] Round 4 完成: 人物分析');
-
-    // Round 5: 情感分析（为"情感"Tab提供数据）
-    updatePhase(4, { status: 'in_progress', startTime: Date.now() });
-    onProgress?.(calcTotalProgress(4, 0), '情感分析', '分析情绪曲线、爽点分布...', 4);
-
-    const emotionPrompt = fillDetailedPrompt(EMOTION_DETAILED_PROMPT, {
-      SCRIPT_CONTENT: scriptContent,
-    });
-
-    result.emotionAnalysis = await callAndExtractJSON<EmotionAnalysis>(
-      [
-        { role: 'system', content: marketSystemPrompt },
-        { role: 'user', content: emotionPrompt },
-      ],
-      detailedOptions,
-      '情感分析'
-    );
-
-    updatePhase(4, { status: 'completed', endTime: Date.now() });
-    onPhaseComplete?.(phases[4], result.emotionAnalysis);
-    onProgress?.(calcTotalProgress(5, 0), '情感分析', '完成', 4, result.emotionAnalysis);
-    console.log('[详细分析] Round 5 完成: 情感分析');
-
-    // Round 6: 市场共鸣详细分析
-    updatePhase(5, { status: 'in_progress', startTime: Date.now() });
-    onProgress?.(calcTotalProgress(5, 0), '市场共鸣', '分析目标受众、原创性、热播契合度...', 5);
-
-    const marketResonancePrompt = fillDetailedPrompt(MARKET_RESONANCE_DETAILED_PROMPT, {
-      SCRIPT_CONTENT: scriptContent,
-    });
-
-    result.marketResonance = await callAndExtractJSON<MarketResonanceAnalysis>(
-      [
-        { role: 'system', content: marketSystemPrompt },
-        { role: 'user', content: marketResonancePrompt },
-      ],
-      detailedOptions,
-      '市场共鸣'
-    );
-    result.marketResonance = normalizeDimensionResult(result.marketResonance);
-
-    updatePhase(5, { status: 'completed', endTime: Date.now() });
-    onPhaseComplete?.(phases[5], result.marketResonance);
-    onProgress?.(calcTotalProgress(6, 0), '市场共鸣', '完成', 5, result.marketResonance);
-    console.log('[详细分析] Round 6 完成: 市场共鸣分析');
-
-    // Round 7: 市场定价分析（为"市场"Tab提供完整数据）
-    updatePhase(6, { status: 'in_progress', startTime: Date.now() });
-    onProgress?.(calcTotalProgress(6, 0), '市场定价', '分析定价建议、平台推荐、收益预测...', 6);
-
-    const marketPrompt = fillDetailedPrompt(getMarketDetailedPrompt(marketType), {
-      SCRIPT_CONTENT: scriptContent,
-    });
-
-    result.marketSuggestion = await callAndExtractJSON<MarketSuggestion>(
-      [
-        { role: 'system', content: marketSystemPrompt },
-        { role: 'user', content: marketPrompt },
-      ],
-      detailedOptions,
-      '市场定价'
-    );
-
-    updatePhase(6, { status: 'completed', endTime: Date.now() });
-    onPhaseComplete?.(phases[6], result.marketSuggestion);
-    onProgress?.(calcTotalProgress(7, 0), '市场定价', '完成', 6, result.marketSuggestion);
-    console.log('[详细分析] Round 7 完成: 市场定价分析');
-
-    // Round 8: 叙事基因详细分析
-    updatePhase(7, { status: 'in_progress', startTime: Date.now() });
-    onProgress?.(calcTotalProgress(7, 0), '叙事基因', '分析叙事逻辑、钩子、爽点、节奏、人物、对白、悬念...', 7);
-
-    const narrativePrompt = fillDetailedPrompt(NARRATIVE_DNA_DETAILED_PROMPT, {
-      SCRIPT_CONTENT: scriptContent,
-    });
-
-    result.narrativeDNA = await callWithSplitRetry<NarrativeDNAAnalysis>(
-      callAndExtractJSON,
-      marketSystemPrompt,
-      narrativePrompt,
-      detailedOptions,
-      {
-        phaseName: '叙事基因',
-        groups: NARRATIVE_SPLIT_GROUPS,
-        promptForDimensions: (dims) => buildSubGroupPrompt(dims, scriptContent, 'narrative'),
-      }
-    );
-    result.narrativeDNA = normalizeDimensionResult(result.narrativeDNA);
-
-    updatePhase(7, { status: 'completed', endTime: Date.now() });
-    onPhaseComplete?.(phases[7], result.narrativeDNA);
-    onProgress?.(calcTotalProgress(8, 0), '叙事基因', '完成', 7, result.narrativeDNA);
-    console.log('[详细分析] Round 8 完成: 叙事基因分析');
-
-    // Round 9: 风险评估（为"风险"Tab提供数据）
-    updatePhase(8, { status: 'in_progress', startTime: Date.now() });
-    onProgress?.(calcTotalProgress(8, 0), '风险评估', '评估合规风险、市场风险、制作风险...', 8);
-
-    const riskPrompt = fillDetailedPrompt(getRiskDetailedPrompt(marketType), {
-      SCRIPT_CONTENT: scriptContent,
-      PRODUCTION_DATA: JSON.stringify(result.productionAnalysis, null, 2),
-      COMMERCIAL_DATA: '商业合规分析将在后续阶段完成后提供',
-    });
-
-    result.riskAssessment = await callAndExtractJSON<RiskAssessment>(
-      [
-        { role: 'system', content: marketSystemPrompt },
-        { role: 'user', content: riskPrompt },
-      ],
-      detailedOptions,
-      '风险评估'
-    );
-
-    updatePhase(8, { status: 'completed', endTime: Date.now() });
-    onPhaseComplete?.(phases[8], result.riskAssessment);
-    onProgress?.(calcTotalProgress(9, 0), '风险评估', '完成', 8, result.riskAssessment);
-    console.log('[详细分析] Round 9 完成: 风险评估');
-
-    // Round 10: 商业化与合规详细分析
-    updatePhase(9, { status: 'in_progress', startTime: Date.now() });
-    onProgress?.(calcTotalProgress(9, 0), '商业合规', '分析用户粘性、传播潜力、内容合规、价值导向...', 9);
-
-    const commercialPrompt = fillDetailedPrompt(COMMERCIAL_COMPLIANCE_DETAILED_PROMPT, {
-      SCRIPT_CONTENT: scriptContent,
-    });
-
-    const commercialRaw = normalizeDimensionResult(await callWithSplitRetry<Record<string, unknown>>(
-      callAndExtractJSON,
-      marketSystemPrompt,
-      commercialPrompt,
-      detailedOptions,
-      {
-        phaseName: '商业合规',
-        groups: COMMERCIAL_SPLIT_GROUPS,
-        promptForDimensions: (dims) => buildSubGroupPrompt(dims, scriptContent, 'commercial'),
-      }
-    ));
+    // 收集 Wave 1 结果
+    result.productionAnalysis = productionAnalysis;
+    result.structureAnalysis = structureAnalysis;
+    result.characterAnalysis = characterAnalysis;
+    result.emotionAnalysis = emotionAnalysis;
+    result.marketResonance = marketResonance;
+    result.marketSuggestion = marketSuggestion;
+    result.narrativeDNA = narrativeDNA;
     result.commercialPotential = {
       userStickiness: commercialRaw.userStickiness,
       viralPotential: commercialRaw.viralPotential,
@@ -1492,43 +1392,80 @@ export async function analyzeScriptDetailed(
       valueOrientation: commercialRaw.valueOrientation,
     } as ComplianceAssessmentAnalysis;
 
-    updatePhase(9, { status: 'completed', endTime: Date.now() });
-    onPhaseComplete?.(phases[9], { commercialPotential: result.commercialPotential, complianceAssessment: result.complianceAssessment });
-    onProgress?.(calcTotalProgress(10, 0), '商业合规', '完成', 9, result.commercialPotential);
-    console.log('[详细分析] Round 10 完成: 商业合规分析');
+    console.log('[详细分析] Wave 1 完成: 8个独立阶段全部完成');
 
-    // Round 11: 综合建议
-    updatePhase(10, { status: 'in_progress', startTime: Date.now() });
-    onProgress?.(calcTotalProgress(10, 0), '综合建议', '生成可操作建议和最终总评...', 10);
+    // ===== Wave 2: 依赖 Wave 1 结果的阶段（2个并行） =====
+    console.log('[详细分析] Wave 2: 2个依赖阶段并行开始');
 
-    const recommendationsPrompt = fillDetailedPrompt(ACTIONABLE_RECOMMENDATIONS_PROMPT, {
-      PRODUCTION_DATA: JSON.stringify(result.productionAnalysis, null, 2),
-      MARKET_RESONANCE_DATA: JSON.stringify(result.marketResonance),
-      NARRATIVE_DNA_DATA: JSON.stringify(result.narrativeDNA),
-      COMMERCIAL_COMPLIANCE_DATA: JSON.stringify({
-        commercialPotential: result.commercialPotential,
-        complianceAssessment: result.complianceAssessment,
-      }),
-    });
+    const [executiveSummary, riskAssessment] = await Promise.all([
+      // Round 2: 执行摘要（依赖 productionAnalysis）
+      runPhase(1, '执行摘要', '生成执行摘要...', () =>
+        callAndExtractJSON<NonNullable<DetailedAnalysisResult['executiveSummary']>>(
+          [
+            sysMsg(marketSystemPrompt),
+            userMsg(fillDetailedPrompt(EXECUTIVE_SUMMARY_PROMPT, {
+              SCRIPT_CONTENT: scriptContent,
+              PRODUCTION_DATA: JSON.stringify(result.productionAnalysis, null, 2),
+            })),
+          ],
+          detailedOptions,
+          '执行摘要'
+        )
+      ),
+      // Round 9: 风险评估（依赖 productionAnalysis + commercialData）
+      runPhase(8, '风险评估', '评估合规风险、市场风险、制作风险...', () =>
+        callAndExtractJSON<RiskAssessment>(
+          [
+            sysMsg(marketSystemPrompt),
+            userMsg(fillDetailedPrompt(getRiskDetailedPrompt(marketType), {
+              SCRIPT_CONTENT: scriptContent,
+              PRODUCTION_DATA: JSON.stringify(result.productionAnalysis, null, 2),
+              COMMERCIAL_DATA: JSON.stringify({
+                commercialPotential: result.commercialPotential,
+                complianceAssessment: result.complianceAssessment,
+              }),
+            })),
+          ],
+          detailedOptions,
+          '风险评估'
+        )
+      ),
+    ]);
 
-    const recommendationsResult = await callAndExtractJSON<{
-      actionableRecommendations: ActionableRecommendation[];
-      finalSummary: DetailedAnalysisResult['finalSummary'];
-    }>(
-      [
-        { role: 'system', content: marketSystemPrompt },
-        { role: 'user', content: recommendationsPrompt },
-      ],
-      detailedOptions,
-      '综合建议'
+    result.executiveSummary = executiveSummary;
+    result.riskAssessment = riskAssessment;
+
+    console.log('[详细分析] Wave 2 完成: 执行摘要 + 风险评估');
+
+    // ===== Wave 3: 综合建议（依赖所有前置结果） =====
+    console.log('[详细分析] Wave 3: 综合建议开始');
+
+    const recommendationsResult = await runPhase(10, '综合建议', '生成可操作建议和最终总评...', () =>
+      callAndExtractJSON<{
+        actionableRecommendations: ActionableRecommendation[];
+        finalSummary: DetailedAnalysisResult['finalSummary'];
+      }>(
+        [
+          sysMsg(marketSystemPrompt),
+          userMsg(fillDetailedPrompt(ACTIONABLE_RECOMMENDATIONS_PROMPT, {
+            PRODUCTION_DATA: JSON.stringify(result.productionAnalysis, null, 2),
+            MARKET_RESONANCE_DATA: JSON.stringify(result.marketResonance),
+            NARRATIVE_DNA_DATA: JSON.stringify(result.narrativeDNA),
+            COMMERCIAL_COMPLIANCE_DATA: JSON.stringify({
+              commercialPotential: result.commercialPotential,
+              complianceAssessment: result.complianceAssessment,
+            }),
+          })),
+        ],
+        detailedOptions,
+        '综合建议'
+      )
     );
+
     result.actionableRecommendations = recommendationsResult.actionableRecommendations;
     result.finalSummary = recommendationsResult.finalSummary;
 
-    updatePhase(10, { status: 'completed', endTime: Date.now() });
-    onPhaseComplete?.(phases[10], { recommendations: result.actionableRecommendations, summary: result.finalSummary });
-    onProgress?.(100, '综合建议', '完成', 10, result.finalSummary);
-    console.log('[详细分析] Round 11 完成: 综合建议');
+    console.log('[详细分析] Wave 3 完成: 综合建议');
 
     // 组装最终结果
     const finalScore = result.finalSummary?.overallScore ?? 75;
