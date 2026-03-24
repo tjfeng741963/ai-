@@ -7,7 +7,7 @@ import {
   Layers, Zap, RefreshCw, TrendingUp, Target, Flame, Sparkles, Check,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { ActBreakdown, TurningPoint, Suspense } from '@/types/rating-advanced.ts';
+import type { ActBreakdown, TurningPoint, Suspense } from '../types/rating-advanced';
 
 interface StructureAnalysisProps {
   actStructure: ActBreakdown[];

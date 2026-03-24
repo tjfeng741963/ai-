@@ -1,4 +1,4 @@
-import type { RatingResult } from '@/types/rating.ts';
+import type { RatingResult } from '../types/rating';
 import type {
   AdvancedRatingResult,
   AnalysisPhase,
@@ -17,7 +17,7 @@ import type {
   NarrativeDNAAnalysis,
   CommercialPotentialAnalysis,
   ComplianceAssessmentAnalysis,
-} from '@/types/rating-advanced.ts';
+} from '../types/rating-advanced';
 import type {
   ModelInfo,
   Provider,
@@ -25,7 +25,7 @@ import type {
   GetProvidersResponse,
   ModelSelection,
   ProviderId,
-} from '@/types/models.ts';
+} from '../types/models';
 import {
   SYSTEM_PROMPT,
   STRUCTURE_ANALYSIS_PROMPT,

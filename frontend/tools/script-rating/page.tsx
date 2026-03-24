@@ -26,30 +26,30 @@ import {
   HelpCircle,
   Tag,
 } from 'lucide-react';
-import { useRatingStore } from '@/store/ratingStore.ts';
-import { analyzeScript, analyzeScriptAdvanced, analyzeScriptDetailed } from '@/services/volcengine.ts';
-import { DIMENSION_LABELS, GRADE_CONFIG } from '@/types/rating.ts';
-import type { RatingResult, DimensionScore, GradeLevel } from '@/types/rating.ts';
-import type { AdvancedRatingResult } from '@/types/rating-advanced.ts';
-import { RadarChart } from '@/components/ui/RadarChart.tsx';
-import { AnalysisProgress } from '@/components/ui/AnalysisProgress.tsx';
-import { EmotionCurve } from '@/components/ui/EmotionCurve.tsx';
-import { CharacterNetwork } from '@/components/ui/CharacterNetwork.tsx';
-import { StructureAnalysis } from '@/components/ui/StructureAnalysis.tsx';
-import { WorldBuildingAnalysis } from '@/components/ui/WorldBuildingAnalysis.tsx';
-import { MarketSuggestion } from '@/components/ui/MarketSuggestion.tsx';
-import { RiskAssessment } from '@/components/ui/RiskAssessment.tsx';
-import { ProductionFeasibility } from '@/components/ui/ProductionFeasibility.tsx';
-import { RatingHistory } from '@/components/ui/RatingHistory.tsx';
-import { ExecutiveSummary } from '@/components/ui/ExecutiveSummary.tsx';
-import { DetailedAnalysisPanel } from '@/components/ui/DetailedAnalysisPanel.tsx';
-import { exportRatingReport } from '@/services/export.ts';
-import { extractScriptName } from '@/services/storage.ts';
-import { GradeExplanation } from '@/components/ui/GradeExplanation.tsx';
-import { ModelSelector } from '@/components/ui/ModelSelector.tsx';
-import { MarketTypeSelector } from '@/components/ui/MarketTypeSelector.tsx';
-import { OutputLanguageSelector } from '@/components/ui/OutputLanguageSelector.tsx';
-import { UploadGuide } from '@/components/ui/UploadGuide.tsx';
+import { useRatingStore } from './store/ratingStore';
+import { analyzeScript, analyzeScriptAdvanced, analyzeScriptDetailed } from './services/volcengine';
+import { DIMENSION_LABELS, GRADE_CONFIG } from './types/rating';
+import type { RatingResult, DimensionScore, GradeLevel } from './types/rating';
+import type { AdvancedRatingResult } from './types/rating-advanced';
+import { RadarChart } from './components/RadarChart';
+import { AnalysisProgress } from './components/AnalysisProgress';
+import { EmotionCurve } from './components/EmotionCurve';
+import { CharacterNetwork } from './components/CharacterNetwork';
+import { StructureAnalysis } from './components/StructureAnalysis';
+import { WorldBuildingAnalysis } from './components/WorldBuildingAnalysis';
+import { MarketSuggestion } from './components/MarketSuggestion';
+import { RiskAssessment } from './components/RiskAssessment';
+import { ProductionFeasibility } from './components/ProductionFeasibility';
+import { RatingHistory } from './components/RatingHistory';
+import { ExecutiveSummary } from './components/ExecutiveSummary';
+import { DetailedAnalysisPanel } from './components/DetailedAnalysisPanel';
+import { exportRatingReport } from './services/export';
+import { extractScriptName } from './services/storage';
+import { GradeExplanation } from './components/GradeExplanation';
+import { ModelSelector } from './components/ModelSelector';
+import { MarketTypeSelector } from './components/MarketTypeSelector';
+import { OutputLanguageSelector } from './components/OutputLanguageSelector';
+import { UploadGuide } from './components/UploadGuide';
 
 // Tab 配置
 const TABS = [
@@ -62,7 +62,7 @@ const TABS = [
   { id: 'risk', label: '风险', icon: ShieldAlert },
 ] as const;
 
-export function ScriptRating() {
+export default function ScriptRating() {
   const {
     scriptContent,
     status,

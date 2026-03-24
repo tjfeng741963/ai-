@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { MarketSuggestion as MarketSuggestionType, PlatformRecommendation, PriceSuggestion } from '@/types/rating-advanced.ts';
+import type { MarketSuggestion as MarketSuggestionType, PlatformRecommendation, PriceSuggestion } from '../types/rating-advanced';
 
 interface MarketSuggestionProps {
   data: MarketSuggestionType;

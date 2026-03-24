@@ -3,8 +3,8 @@
  * 使用 localStorage 持久化存储评级历史
  */
 
-import type { RatingResult } from '@/types/rating.ts';
-import type { AdvancedRatingResult } from '@/types/rating-advanced.ts';
+import type { RatingResult } from '../types/rating';
+import type { AdvancedRatingResult } from '../types/rating-advanced';
 
 const STORAGE_KEY = 'script_rating_history';
 const MAX_RECORDS = 50; // 最多保存50条记录

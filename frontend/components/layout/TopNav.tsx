@@ -2,37 +2,31 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Bell, Settings, Search } from 'lucide-react';
 
-const TOP_LINKS = [
-  { to: '/', label: '创作中心' },
-  { to: '#works', label: '我的作品' },
-  { to: '#inspiration', label: '灵感库' },
-] as const;
-
 export function TopNav() {
   const [searchFocused, setSearchFocused] = useState(false);
 
   return (
     <nav className="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-20 bg-transparent backdrop-blur-xl shadow-cm-ambient">
-      {/* Left: Logo + Links */}
+      {/* Left: Logo */}
       <div className="flex items-center gap-8">
-        <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent font-headline tracking-tight">
+        <NavLink
+          to="/"
+          className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent font-headline tracking-tight"
+        >
           山海万象
-        </span>
+        </NavLink>
         <div className="hidden md:flex gap-6 font-headline tracking-tight text-sm">
-          {TOP_LINKS.map(({ to, label }) => (
-            <NavLink
-              key={label}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) =>
-                isActive && to !== '#works' && to !== '#inspiration'
-                  ? 'text-cyan-400 font-bold border-b-2 border-cyan-400 pb-1'
-                  : 'text-slate-400 hover:text-slate-100 transition-colors duration-500'
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              isActive
+                ? 'text-cyan-400 font-bold border-b-2 border-cyan-400 pb-1'
+                : 'text-slate-400 hover:text-slate-100 transition-colors duration-500'
+            }
+          >
+            工具中心
+          </NavLink>
         </div>
       </div>
 
@@ -46,7 +40,7 @@ export function TopNav() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
           <input
             type="text"
-            placeholder="搜索剧本、小说..."
+            placeholder="搜索工具..."
             className="cm-search-input w-full pl-9 pr-4 py-2.5 rounded-full text-sm text-cm-on-surface placeholder:text-slate-500 outline-none font-body"
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}

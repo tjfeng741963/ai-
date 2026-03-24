@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import type { AnalysisPhase, AnalysisPhaseStatus } from '@/types/rating-advanced.ts';
-import { ANALYSIS_PHASES } from '@/types/rating-advanced.ts';
+import type { AnalysisPhase, AnalysisPhaseStatus } from '../types/rating-advanced';
+import { ANALYSIS_PHASES } from '../types/rating-advanced';
 
 interface AnalysisProgressProps {
   phases: AnalysisPhase[];

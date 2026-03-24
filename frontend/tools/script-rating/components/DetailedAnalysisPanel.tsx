@@ -23,8 +23,8 @@ import type {
   DimensionDetailedAnalysis,
   ActionableRecommendation,
   BusinessClosedLoopPlan,
-} from '@/types/rating-advanced.ts';
-import { getLabels, getDimensionLabel, type OutputLanguage } from '@/services/i18n-labels.ts';
+} from '../types/rating-advanced';
+import { getLabels, getDimensionLabel, type OutputLanguage } from '../services/i18n-labels';
 
 interface DetailedAnalysisPanelProps {
   detailedAnalysis: DetailedAnalysis;

@@ -7,8 +7,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
-import { DIMENSION_LABELS } from '@/types/rating.ts';
-import type { DimensionScore } from '@/types/rating.ts';
+import { DIMENSION_LABELS } from '../types/rating';
+import type { DimensionScore } from '../types/rating';
 
 interface RadarChartProps {
   dimensions: Record<string, DimensionScore>;

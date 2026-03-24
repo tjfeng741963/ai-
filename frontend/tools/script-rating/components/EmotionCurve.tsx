@@ -10,7 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { motion } from 'framer-motion';
-import type { EmotionPoint, PleasurePoint, EmotionType } from '@/types/rating-advanced.ts';
+import type { EmotionPoint, PleasurePoint, EmotionType } from '../types/rating-advanced';
 
 interface EmotionCurveProps {
   emotionCurve: EmotionPoint[];

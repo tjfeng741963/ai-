@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Character, CharacterRelationship, CharacterRole } from '@/types/rating-advanced.ts';
+import type { Character, CharacterRelationship, CharacterRole } from '../types/rating-advanced';
 
 interface CharacterNetworkProps {
   characters: Character[];

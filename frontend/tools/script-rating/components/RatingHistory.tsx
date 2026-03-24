@@ -15,10 +15,10 @@ import {
   Check,
   AlertTriangle,
 } from 'lucide-react';
-import type { RatingRecord } from '@/services/storage.ts';
-import { exportRecordsAsJSON, importRecordsFromJSON } from '@/services/storage.ts';
-import { GRADE_CONFIG } from '@/types/rating.ts';
-import type { GradeLevel } from '@/types/rating.ts';
+import type { RatingRecord } from '../services/storage';
+import { exportRecordsAsJSON, importRecordsFromJSON } from '../services/storage';
+import { GRADE_CONFIG } from '../types/rating';
+import type { GradeLevel } from '../types/rating';
 
 interface RatingHistoryProps {
   records: RatingRecord[];

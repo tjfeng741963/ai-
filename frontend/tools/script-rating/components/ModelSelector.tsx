@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { ModelInfo, Provider, ProviderId } from '@/types/models.ts';
+import type { ModelInfo, Provider, ProviderId } from '../types/models';
 import {
   getAvailableModels,
   getConfiguredProviders,
   getCurrentModel,
   setCurrentModel,
-} from '@/services/volcengine.ts';
+} from '../services/volcengine';
 
 interface ModelSelectorProps {
   onModelChange?: (modelId: string, provider: ProviderId) => void;

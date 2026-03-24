@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { ProductionFeasibility as ProductionFeasibilityType, BudgetTier } from '@/types/rating-advanced.ts';
+import type { ProductionFeasibility as ProductionFeasibilityType, BudgetTier } from '../types/rating-advanced';
 
 interface ProductionFeasibilityProps {
   data: ProductionFeasibilityType;

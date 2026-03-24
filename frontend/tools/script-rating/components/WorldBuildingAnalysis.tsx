@@ -6,7 +6,7 @@ import {
   GraduationCap, Briefcase, Heart,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { WorldBuilding } from '@/types/rating-advanced.ts';
+import type { WorldBuilding } from '../types/rating-advanced';
 
 interface WorldBuildingAnalysisProps {
   data: WorldBuilding;

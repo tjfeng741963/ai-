@@ -1,4 +1,4 @@
-import type { MarketType } from '@/services/market-context.ts';
+import type { MarketType } from '../services/market-context';
 
 interface MarketTypeSelectorProps {
   value: MarketType;

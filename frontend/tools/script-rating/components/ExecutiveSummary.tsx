@@ -6,9 +6,9 @@ import {
   Lightbulb,
   TrendingUp,
 } from 'lucide-react';
-import type { ExecutiveSummary as ExecutiveSummaryType } from '@/types/rating-advanced.ts';
-import type { GradeLevel } from '@/types/rating.ts';
-import { GRADE_CONFIG } from '@/types/rating.ts';
+import type { ExecutiveSummary as ExecutiveSummaryType } from '../types/rating-advanced';
+import type { GradeLevel } from '../types/rating';
+import { GRADE_CONFIG } from '../types/rating';
 
 interface ExecutiveSummaryProps {
   data: ExecutiveSummaryType;

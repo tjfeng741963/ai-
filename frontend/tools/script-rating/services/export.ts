@@ -3,15 +3,15 @@
  * 支持导出为 HTML/PDF 格式的专业评级报告
  */
 
-import type { RatingResult, GradeLevel } from '@/types/rating.ts';
+import type { RatingResult, GradeLevel } from '../types/rating';
 import type {
   AdvancedRatingResult,
   ExecutiveSummary,
   DetailedAnalysis,
   DimensionDetailedAnalysis,
   ActionableRecommendation,
-} from '@/types/rating-advanced.ts';
-import { GRADE_CONFIG, DIMENSION_LABELS } from '@/types/rating.ts';
+} from '../types/rating-advanced';
+import { GRADE_CONFIG, DIMENSION_LABELS } from '../types/rating';
 import { getLabels, getGradeLabelByLang, getDimensionLabel, type OutputLanguage } from './i18n-labels.ts';
 
 /** 导出格式 */

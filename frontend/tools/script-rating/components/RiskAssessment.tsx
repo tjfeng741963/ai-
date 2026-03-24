@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { RiskAssessment as RiskAssessmentType, RiskItem, PlatformComplianceStatus } from '@/types/rating-advanced.ts';
+import type { RiskAssessment as RiskAssessmentType, RiskItem, PlatformComplianceStatus } from '../types/rating-advanced';
 
 interface RiskAssessmentProps {
   data: RiskAssessmentType;

@@ -1,11 +1,11 @@
 import { create } from 'zustand';
-import type { RatingResult, RatingStatus } from '@/types/rating.ts';
+import type { RatingResult, RatingStatus } from '../types/rating';
 import type {
   AdvancedRatingResult,
   AnalysisPhase,
   AnalysisPhaseStatus,
-} from '@/types/rating-advanced.ts';
-import { ANALYSIS_PHASES } from '@/types/rating-advanced.ts';
+} from '../types/rating-advanced';
+import { ANALYSIS_PHASES } from '../types/rating-advanced';
 import {
   getRatingRecords,
   saveRatingRecord,
@@ -13,8 +13,8 @@ import {
   clearRatingRecords,
   updateRecordName,
   type RatingRecord,
-} from '@/services/storage.ts';
-import type { MarketType } from '@/services/market-context.ts';
+} from '../services/storage';
+import type { MarketType } from '../services/market-context';
 
 /** 分析模式 */
 export type AnalysisMode = 'simple' | 'advanced';
