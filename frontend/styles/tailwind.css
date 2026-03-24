@@ -1,11 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ui-ux-pro-max Design System 变量 */
+@layer base {
+  :root {
+    --color-primary: #6366f1;
+    --color-primary-hover: #4f46e5;
+    --color-secondary: #818cf8;
+    --color-accent: #059669;
+    --color-cta: #f97316;
+    --color-background: #f5f3ff;
+    --color-foreground: #1e1b4b;
+    --color-card: #ffffff;
+    --color-card-foreground: #1e1b4b;
+    --color-muted: #ebeff9;
+    --color-muted-foreground: #64748b;
+    --color-border: #e0e7ff;
+    --color-destructive: #dc2626;
+    --color-ring: #6366f1;
+    /* 间距 */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    --space-3xl: 4rem;
+    /* 阴影 */
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+    --shadow-xl: 0 20px 25px rgba(0,0,0,0.12);
+  }
+}
+
 /* 全局样式 */
 body {
   @apply bg-workspace-bg text-dark-text;
-  font-family: 'CascadiaNextSC', 'CascadiaNextJP', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'CascadiaNextSC', 'CascadiaNextJP', system-ui, sans-serif;
 }
 
 /* 滚动条样式 */
@@ -24,4 +59,13 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-400;
+}
+
+/* ui-ux-pro-max: 全局交互优化 */
+@layer components {
+  /* Focus 可见性 (键盘导航) */
+  :focus-visible {
+    @apply outline-2 outline-offset-2;
+    outline-color: var(--color-primary);
+  }
 }

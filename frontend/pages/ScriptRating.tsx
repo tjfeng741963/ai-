@@ -181,39 +181,39 @@ export function ScriptRating() {
   const hasResult = result || advancedResult;
 
   return (
-    <div className="min-h-screen p-6 bg-gray-50">
+    <div className="min-h-screen p-6 bg-background">
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary-700 flex items-center justify-center shadow-primary">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">AI漫剧评级系统</h1>
-              <p className="text-gray-500 text-sm">上传剧本，获取AI漫剧专业的多维度评级报告</p>
+              <h1 className="text-2xl font-extrabold text-foreground tracking-tight">AI漫剧评级系统</h1>
+              <p className="text-muted-foreground text-sm">上传剧本，获取AI漫剧专业的多维度评级报告</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             {/* 分析模式切换 */}
-            <div className="flex items-center gap-2 bg-white rounded-lg p-1 shadow-sm">
+            <div className="flex items-center gap-1 bg-card rounded-xl p-1 shadow-card border border-border">
               <button
                 onClick={() => setAnalysisMode('simple')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                   analysisMode === 'simple'
-                    ? 'bg-indigo-500 text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-primary text-white shadow-primary'
+                    : 'text-muted-foreground hover:bg-primary-50 hover:text-primary'
                 }`}
               >
                 快速分析
               </button>
               <button
                 onClick={() => setAnalysisMode('advanced')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                   analysisMode === 'advanced'
-                    ? 'bg-indigo-500 text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-primary text-white shadow-primary'
+                    : 'text-muted-foreground hover:bg-primary-50 hover:text-primary'
                 }`}
               >
                 深度分析
@@ -221,7 +221,7 @@ export function ScriptRating() {
             </div>
 
             {/* 分隔线 */}
-            <div className="w-px h-8 bg-gray-200" />
+            <div className="w-px h-8 bg-border" />
 
             {/* 市场选择器 */}
             <MarketTypeSelector value={marketType} onChange={setMarketType} compact />
@@ -230,7 +230,7 @@ export function ScriptRating() {
             <OutputLanguageSelector value={outputLanguage} onChange={setOutputLanguage} compact />
 
             {/* 分隔线 */}
-            <div className="w-px h-8 bg-gray-200" />
+            <div className="w-px h-8 bg-border" />
 
             {/* 模型选择器 */}
             <ModelSelector compact />
@@ -238,12 +238,12 @@ export function ScriptRating() {
             {/* 历史记录按钮 */}
             <button
               onClick={toggleHistory}
-              className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-white shadow-sm hover:bg-gray-50 transition-colors"
+              className="relative flex items-center gap-2 px-4 py-2 rounded-xl bg-card shadow-card border border-border hover:shadow-card-hover hover:border-primary-200 transition-all duration-200"
             >
-              <History className="w-5 h-5 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">历史</span>
+              <History className="w-5 h-5 text-muted-foreground" />
+              <span className="text-sm font-semibold text-foreground">历史</span>
               {historyRecords.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-indigo-500 text-white text-xs flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center ring-2 ring-background">
                   {historyRecords.length > 9 ? '9+' : historyRecords.length}
                 </span>
               )}
@@ -258,13 +258,13 @@ export function ScriptRating() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* 左侧：剧本输入 */}
             <div className="lg:col-span-2 space-y-4">
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+              <div className="bg-card rounded-2xl shadow-card p-6 border border-border hover:shadow-card-hover transition-shadow duration-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-indigo-500" />
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-primary" />
                     剧本内容
                   </h2>
-                  <label className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 cursor-pointer transition-colors text-sm">
+                  <label className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary font-medium transition-colors duration-200 text-sm">
                     <Upload className="w-4 h-4" />
                     上传文件
                     <input
@@ -279,31 +279,31 @@ export function ScriptRating() {
                   value={scriptContent}
                   onChange={(e) => setScriptContent(e.target.value)}
                   placeholder="请粘贴剧本内容，或上传 .txt / .md 文件...&#10;&#10;支持的格式：&#10;- 标准剧本格式（场景、人物、对白）&#10;- 小说稿/故事大纲&#10;- 分集大纲"
-                  className="w-full h-[500px] p-4 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none resize-none text-sm leading-relaxed"
+                  className="w-full h-[500px] p-4 rounded-xl border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none resize-none text-sm leading-relaxed text-foreground placeholder:text-muted-foreground transition-colors duration-200"
                 />
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-muted-foreground">
                       {scriptContent.length.toLocaleString()} 字
                       {scriptContent.length > 0 && scriptContent.length < 500 && (
-                        <span className="ml-2 text-amber-500">
+                        <span className="ml-2 text-amber-500 font-medium">
                           (建议至少 500 字以获得更准确的分析)
                         </span>
                       )}
                     </span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
                       marketType === 'domestic'
                         ? 'bg-red-50 text-red-600 border border-red-200'
                         : 'bg-blue-50 text-blue-600 border border-blue-200'
                     }`}>
-                      {marketType === 'domestic' ? '🇨🇳 国内市场' : '🌏 出海市场'}
+                      {marketType === 'domestic' ? '国内市场' : '出海市场'}
                     </span>
                   </div>
                   <div className="flex gap-2">
                     {scriptContent && (
                       <button
                         onClick={reset}
-                        className="px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-sm"
+                        className="px-4 py-2.5 rounded-xl border border-border hover:bg-muted hover:border-primary-200 transition-all duration-200 text-sm font-medium text-muted-foreground"
                       >
                         清空
                       </button>
@@ -311,7 +311,7 @@ export function ScriptRating() {
                     <button
                       onClick={handleAnalyze}
                       disabled={isAnalyzing || !scriptContent.trim()}
-                      className="px-6 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-indigo-500/25"
+                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-700 text-white font-semibold hover:shadow-primary hover:-translate-y-px transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center gap-2"
                     >
                       {isAnalyzing ? (
                         <>
@@ -338,12 +338,12 @@ export function ScriptRating() {
                     exit={{ opacity: 0, y: -10 }}
                     className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3"
                   >
-                    <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <p className="font-medium text-red-700">分析失败</p>
+                      <p className="font-semibold text-red-700">分析失败</p>
                       <p className="text-sm text-red-600 mt-1">{error}</p>
                     </div>
-                    <button onClick={() => setError('')} className="text-red-400 hover:text-red-500">
+                    <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 transition-colors duration-200">
                       <X className="w-4 h-4" />
                     </button>
                   </motion.div>
@@ -361,20 +361,20 @@ export function ScriptRating() {
                   isAnalyzing={isAnalyzing}
                 />
               ) : isAnalyzing ? (
-                <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                <div className="bg-card rounded-2xl shadow-card p-6 border border-border">
                   <div className="flex items-center gap-3 mb-4">
-                    <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
-                    <span className="font-medium">{currentStep}</span>
+                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                    <span className="font-semibold text-foreground">{currentStep}</span>
                   </div>
-                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                     <motion.div
-                      className="h-full bg-gradient-to-r from-indigo-500 to-purple-600"
+                      className="h-full bg-gradient-to-r from-primary to-primary-700 rounded-full"
                       initial={{ width: 0 }}
                       animate={{ width: `${progress}%` }}
                       transition={{ duration: 0.3 }}
                     />
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">{progress}%</p>
+                  <p className="text-sm text-muted-foreground mt-2 font-medium">{progress}%</p>
                 </div>
               ) : (
                 <UploadGuide analysisMode={analysisMode} />
@@ -388,13 +388,11 @@ export function ScriptRating() {
           <div className="space-y-6">
             {/* Tab 导航 */}
             <div className="flex items-center justify-between">
-              <div className="flex gap-1 bg-white rounded-xl p-1 shadow-sm">
+              <div className="flex gap-1 bg-card rounded-xl p-1 shadow-card border border-border">
                 {TABS.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
-                  // 只有总览对简单分析可用，其他 tab 需要高级分析结果
                   const isDisabled = !advancedResult && tab.id !== 'overview';
-                  // 详细报告 tab 需要 detailedAnalysis 数据
                   const isReportDisabled = tab.id === 'report' && !advancedResult?.detailedAnalysis;
 
                   return (
@@ -403,9 +401,9 @@ export function ScriptRating() {
                       onClick={() => !(isDisabled || isReportDisabled) && setActiveTab(tab.id)}
                       disabled={isDisabled || isReportDisabled}
                       className={`
-                        flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all
-                        ${isActive ? 'bg-indigo-500 text-white shadow-sm' : ''}
-                        ${!isActive && !(isDisabled || isReportDisabled) ? 'text-gray-600 hover:bg-gray-100' : ''}
+                        flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200
+                        ${isActive ? 'bg-primary text-white shadow-primary' : ''}
+                        ${!isActive && !(isDisabled || isReportDisabled) ? 'text-muted-foreground hover:bg-primary-50 hover:text-primary' : ''}
                         ${(isDisabled || isReportDisabled) ? 'text-gray-300 cursor-not-allowed' : ''}
                       `}
                     >
@@ -420,12 +418,12 @@ export function ScriptRating() {
                 {/* 导出按钮 */}
                 <div className="relative group">
                   <button
-                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 transition-opacity text-sm flex items-center gap-2 shadow-lg shadow-indigo-500/25"
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-700 text-white hover:shadow-primary hover:-translate-y-px transition-all duration-200 text-sm font-semibold flex items-center gap-2"
                   >
                     <Download className="w-4 h-4" />
                     导出报告
                   </button>
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-card rounded-xl shadow-lg border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
                     <button
                       onClick={() => {
                         const scriptName = extractScriptName(scriptContent);
@@ -438,9 +436,9 @@ export function ScriptRating() {
                           includeRecommendations: true,
                         });
                       }}
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2 rounded-t-xl"
+                      className="w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-primary-50 hover:text-primary flex items-center gap-2 rounded-t-xl transition-colors duration-200"
                     >
-                      <FileText className="w-4 h-4 text-indigo-500" />
+                      <FileText className="w-4 h-4 text-primary" />
                       导出为 HTML
                     </button>
                     <button
@@ -455,9 +453,9 @@ export function ScriptRating() {
                           includeRecommendations: true,
                         });
                       }}
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                      className="w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-primary-50 hover:text-primary flex items-center gap-2 transition-colors duration-200"
                     >
-                      <FileText className="w-4 h-4 text-gray-500" />
+                      <FileText className="w-4 h-4 text-muted-foreground" />
                       导出为 Markdown
                     </button>
                     <button
@@ -472,9 +470,9 @@ export function ScriptRating() {
                           includeRecommendations: true,
                         });
                       }}
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2 rounded-b-xl border-t border-gray-100"
+                      className="w-full px-4 py-2.5 text-left text-sm font-medium hover:bg-primary-50 hover:text-primary flex items-center gap-2 rounded-b-xl border-t border-border transition-colors duration-200"
                     >
-                      <Printer className="w-4 h-4 text-gray-500" />
+                      <Printer className="w-4 h-4 text-muted-foreground" />
                       导出为 PDF
                     </button>
                   </div>
@@ -482,7 +480,7 @@ export function ScriptRating() {
 
                 <button
                   onClick={reset}
-                  className="px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-sm flex items-center gap-2"
+                  className="px-4 py-2.5 rounded-xl border border-border hover:bg-muted hover:border-primary-200 transition-all duration-200 text-sm font-medium text-muted-foreground flex items-center gap-2"
                 >
                   <X className="w-4 h-4" />
                   新的分析
@@ -505,16 +503,16 @@ export function ScriptRating() {
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-2xl p-4 border border-indigo-100"
+                      className="bg-gradient-to-r from-primary-50 via-primary-100/50 to-primary-50 rounded-2xl p-5 border border-primary-100"
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                          <Tag className="w-5 h-5 text-indigo-500" />
+                        <h3 className="font-bold text-foreground flex items-center gap-2">
+                          <Tag className="w-5 h-5 text-primary" />
                           AI漫剧标签
                         </h3>
                         <button
                           onClick={() => setShowGradeHelp(!showGradeHelp)}
-                          className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700"
+                          className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-hover transition-colors duration-200"
                         >
                           <HelpCircle className="w-4 h-4" />
                           评级说明
@@ -523,7 +521,7 @@ export function ScriptRating() {
                       <div className="flex flex-wrap gap-2">
                         {/* 频类标签 */}
                         <span className={`
-                          px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm
+                          px-3 py-1.5 rounded-full text-sm font-bold shadow-sm
                           ${advancedResult.executiveSummary.genre === '男频' ? 'bg-blue-500 text-white' : ''}
                           ${advancedResult.executiveSummary.genre === '女频' ? 'bg-pink-500 text-white' : ''}
                           ${advancedResult.executiveSummary.genre === '中性' ? 'bg-gray-500 text-white' : ''}
@@ -532,7 +530,7 @@ export function ScriptRating() {
                         </span>
                         {/* 子类型标签 */}
                         {advancedResult.executiveSummary.subGenre && (
-                          <span className="px-3 py-1.5 bg-purple-500 text-white rounded-full text-sm font-medium shadow-sm">
+                          <span className="px-3 py-1.5 bg-primary-700 text-white rounded-full text-sm font-semibold shadow-sm">
                             {advancedResult.executiveSummary.subGenre}
                           </span>
                         )}
@@ -540,7 +538,7 @@ export function ScriptRating() {
                         {advancedResult.executiveSummary.themes.map((theme, i) => (
                           <span
                             key={i}
-                            className="px-3 py-1.5 bg-white text-indigo-700 rounded-full text-sm font-medium shadow-sm border border-indigo-200"
+                            className="px-3 py-1.5 bg-card text-primary-900 rounded-full text-sm font-medium shadow-sm border border-primary-200"
                           >
                             {theme}
                           </span>
@@ -549,7 +547,7 @@ export function ScriptRating() {
                         {advancedResult.executiveSummary.platformTags?.map((tag, i) => (
                           <span
                             key={`platform-${i}`}
-                            className="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-medium shadow-sm border border-green-200"
+                            className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium shadow-sm border border-emerald-200"
                           >
                             #{tag}
                           </span>
@@ -558,31 +556,30 @@ export function ScriptRating() {
                         {advancedResult.executiveSummary.overseasTags?.map((tag, i) => (
                           <span
                             key={`overseas-${i}`}
-                            className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-sm font-medium shadow-sm border border-orange-200"
+                            className="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-full text-sm font-medium shadow-sm border border-orange-200"
                           >
                             {tag}
                           </span>
                         ))}
                         {/* 评级标签 */}
                         <span className={`
-                          px-3 py-1.5 rounded-full text-sm font-bold shadow-sm
+                          px-3 py-1.5 rounded-full text-sm font-extrabold shadow-sm
                           ${result.overallGrade === 'S' ? 'bg-amber-500 text-white' : ''}
-
-                          ${result.overallGrade === 'A' ? 'bg-indigo-500 text-white' : ''}
+                          ${result.overallGrade === 'A' ? 'bg-primary text-white' : ''}
                           ${result.overallGrade === 'B' ? 'bg-blue-500 text-white' : ''}
                           ${result.overallGrade === 'C' ? 'bg-gray-500 text-white' : ''}
-                          ${result.overallGrade === 'D' ? 'bg-red-500 text-white' : ''}
+                          ${result.overallGrade === 'D' ? 'bg-destructive text-white' : ''}
                         `}>
                           {result.overallGrade}级 · {result.overallScore.toFixed(0)}分
                         </span>
                       </div>
                       {/* AI漫剧亮点 */}
                       {advancedResult.executiveSummary.aiComicHighlights && advancedResult.executiveSummary.aiComicHighlights.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-indigo-100">
-                          <p className="text-xs text-indigo-600 font-medium mb-2">AI漫剧亮点</p>
-                          <div className="flex flex-wrap gap-1">
+                        <div className="mt-3 pt-3 border-t border-primary-100">
+                          <p className="text-xs text-primary font-semibold mb-2">AI漫剧亮点</p>
+                          <div className="flex flex-wrap gap-1.5">
                             {advancedResult.executiveSummary.aiComicHighlights.map((highlight, i) => (
-                              <span key={i} className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded">
+                              <span key={i} className="px-2.5 py-0.5 bg-primary-100 text-primary-700 text-xs font-medium rounded-md">
                                 {highlight}
                               </span>
                             ))}
@@ -731,13 +728,13 @@ export function ScriptRating() {
       <AnimatePresence>
         {justSaved && (
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-6 right-6 bg-green-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2"
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.95 }}
+            className="fixed bottom-6 right-6 bg-accent-green text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 font-semibold"
           >
             <Save className="w-5 h-5" />
-            <span className="font-medium">评级结果已自动保存</span>
+            评级结果已自动保存
           </motion.div>
         )}
       </AnimatePresence>
@@ -781,7 +778,7 @@ function RatingResultPanel({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100"
+          className="bg-card rounded-2xl shadow-card p-6 border border-border hover:shadow-card-hover transition-shadow duration-200"
         >
           <div className="flex items-start gap-6">
             {/* 评分圆环 */}
@@ -792,7 +789,7 @@ function RatingResultPanel({
                   cy="56"
                   r="48"
                   fill="none"
-                  stroke="#f1f5f9"
+                  stroke="#e0e7ff"
                   strokeWidth="8"
                 />
                 <motion.circle
@@ -810,32 +807,32 @@ function RatingResultPanel({
                 <defs>
                   <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#6366f1" />
-                    <stop offset="100%" stopColor="#8b5cf6" />
+                    <stop offset="100%" stopColor="#4338ca" />
                   </linearGradient>
                 </defs>
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-bold text-gray-800">
+                <span className="text-3xl font-extrabold text-foreground">
                   {result.overallScore.toFixed(1)}
                 </span>
-                <span className="text-xs text-gray-400">/100</span>
+                <span className="text-xs text-muted-foreground font-medium">/100</span>
               </div>
             </div>
 
             {/* 等级信息 */}
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <span className={`text-4xl font-bold ${gradeConfig.color}`}>
+                <span className={`text-4xl font-extrabold ${gradeConfig.color}`}>
                   {result.overallGrade}
                 </span>
                 <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${gradeConfig.bgColor} ${gradeConfig.color}`}
+                  className={`px-3 py-1 rounded-full text-sm font-semibold ${gradeConfig.bgColor} ${gradeConfig.color}`}
                 >
                   {gradeConfig.label}
                 </span>
               </div>
-              <p className="text-gray-800 font-medium mb-1">{result.summary.oneSentence}</p>
-              <p className="text-sm text-gray-500 leading-relaxed">{result.summary.paragraph}</p>
+              <p className="text-foreground font-semibold mb-1">{result.summary.oneSentence}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{result.summary.paragraph}</p>
             </div>
           </div>
         </motion.div>
@@ -845,10 +842,10 @@ function RatingResultPanel({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100"
+          className="bg-card rounded-2xl shadow-card p-6 border border-border hover:shadow-card-hover transition-shadow duration-200"
         >
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-indigo-500" />
+          <h3 className="font-bold mb-4 flex items-center gap-2 text-foreground">
+            <BarChart3 className="w-5 h-5 text-primary" />
             维度分析
           </h3>
           <RadarChart dimensions={result.dimensions} />
@@ -865,38 +862,38 @@ function RatingResultPanel({
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
         >
           {/* 亮点 */}
-          <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
-            <h3 className="font-semibold mb-3 flex items-center gap-2 text-green-600">
+          <div className="bg-card rounded-2xl shadow-card p-5 border border-border hover:shadow-card-hover transition-shadow duration-200">
+            <h3 className="font-bold mb-3 flex items-center gap-2 text-emerald-600">
               <CheckCircle className="w-5 h-5" />
               核心亮点
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {result.highlights.top3Strengths.map((item, i) => (
                 <li key={i} className="text-sm flex items-start gap-2">
-                  <span className="text-green-500 mt-0.5">✓</span>
-                  <span className="text-gray-700">{item}</span>
+                  <span className="text-emerald-500 mt-0.5 font-bold">+</span>
+                  <span className="text-foreground">{item}</span>
                 </li>
               ))}
             </ul>
           </div>
 
           {/* 改进建议 */}
-          <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
-            <h3 className="font-semibold mb-3 flex items-center gap-2 text-amber-600">
+          <div className="bg-card rounded-2xl shadow-card p-5 border border-border hover:shadow-card-hover transition-shadow duration-200">
+            <h3 className="font-bold mb-3 flex items-center gap-2 text-amber-600">
               <Lightbulb className="w-5 h-5" />
               改进建议
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {result.improvements.critical.map((item, i) => (
                 <li key={i} className="text-sm flex items-start gap-2">
-                  <span className="text-red-500 mt-0.5">!</span>
-                  <span className="text-gray-700">{item}</span>
+                  <span className="text-destructive mt-0.5 font-bold">!</span>
+                  <span className="text-foreground">{item}</span>
                 </li>
               ))}
               {result.improvements.important.slice(0, 2).map((item, i) => (
                 <li key={i} className="text-sm flex items-start gap-2">
-                  <span className="text-amber-500 mt-0.5">•</span>
-                  <span className="text-gray-700">{item}</span>
+                  <span className="text-amber-500 mt-0.5 font-bold">-</span>
+                  <span className="text-foreground">{item}</span>
                 </li>
               ))}
             </ul>
@@ -908,10 +905,10 @@ function RatingResultPanel({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100"
+          className="bg-card rounded-2xl shadow-card p-6 border border-border hover:shadow-card-hover transition-shadow duration-200"
         >
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <Target className="w-5 h-5 text-indigo-500" />
+          <h3 className="font-bold mb-4 flex items-center gap-2 text-foreground">
+            <Target className="w-5 h-5 text-primary" />
             维度详情
           </h3>
           <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
@@ -954,21 +951,21 @@ function DimensionItem({
         : 'text-red-500';
 
   return (
-    <div className="border border-gray-100 rounded-xl overflow-hidden">
+    <div className="border border-border rounded-xl overflow-hidden hover:border-primary-200 transition-colors duration-200">
       <button
         onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-primary-50/50 transition-colors duration-200"
       >
         <div className="flex items-center gap-3">
-          <span className={`text-lg font-bold ${scoreColor}`}>
+          <span className={`text-lg font-extrabold ${scoreColor}`}>
             {dimension.score.toFixed(1)}
           </span>
-          <span className="font-medium text-gray-700">{label}</span>
+          <span className="font-semibold text-foreground">{label}</span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-4 h-4 text-gray-400" />
+          <ChevronUp className="w-4 h-4 text-muted-foreground" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-gray-400" />
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
         )}
       </button>
       <AnimatePresence>
@@ -977,16 +974,16 @@ function DimensionItem({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="px-4 pb-4 border-t border-gray-100"
+            className="px-4 pb-4 border-t border-border"
           >
-            <p className="text-sm text-gray-600 mt-3">{dimension.analysis}</p>
+            <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{dimension.analysis}</p>
             {dimension.strengths && dimension.strengths.length > 0 && (
               <div className="mt-3">
-                <p className="text-xs font-medium text-green-600 mb-1">优点</p>
-                <ul className="text-sm space-y-1">
+                <p className="text-xs font-bold text-emerald-600 mb-1.5">优点</p>
+                <ul className="text-sm space-y-1.5">
                   {dimension.strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-1 text-gray-600">
-                      <span className="text-green-500">+</span>
+                    <li key={i} className="flex items-start gap-1.5 text-foreground">
+                      <span className="text-emerald-500 font-bold">+</span>
                       {s}
                     </li>
                   ))}
@@ -995,11 +992,11 @@ function DimensionItem({
             )}
             {dimension.weaknesses && dimension.weaknesses.length > 0 && (
               <div className="mt-3">
-                <p className="text-xs font-medium text-amber-600 mb-1">待改进</p>
-                <ul className="text-sm space-y-1">
+                <p className="text-xs font-bold text-amber-600 mb-1.5">待改进</p>
+                <ul className="text-sm space-y-1.5">
                   {dimension.weaknesses.map((w, i) => (
-                    <li key={i} className="flex items-start gap-1 text-gray-600">
-                      <span className="text-amber-500">-</span>
+                    <li key={i} className="flex items-start gap-1.5 text-foreground">
+                      <span className="text-amber-500 font-bold">-</span>
                       {w}
                     </li>
                   ))}
@@ -1008,11 +1005,11 @@ function DimensionItem({
             )}
             {dimension.suggestions && dimension.suggestions.length > 0 && (
               <div className="mt-3">
-                <p className="text-xs font-medium text-indigo-600 mb-1">建议</p>
-                <ul className="text-sm space-y-1">
+                <p className="text-xs font-bold text-primary mb-1.5">建议</p>
+                <ul className="text-sm space-y-1.5">
                   {dimension.suggestions.map((s, i) => (
-                    <li key={i} className="flex items-start gap-1 text-gray-600">
-                      <span className="text-indigo-500">→</span>
+                    <li key={i} className="flex items-start gap-1.5 text-foreground">
+                      <span className="text-primary font-bold">&rarr;</span>
                       {s}
                     </li>
                   ))}
