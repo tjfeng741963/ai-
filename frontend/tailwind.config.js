@@ -10,7 +10,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ui-ux-pro-max: Micro SaaS Indigo 配色方案
+        // ui-ux-pro-max: Micro SaaS Indigo 配色方案 (preserved for ScriptRating)
         "primary": {
           DEFAULT: "#6366f1",
           hover: "#4f46e5",
@@ -40,14 +40,12 @@ export default {
         "dark-text": "#1e293b",
         "border": "#e0e7ff",
         "ring": "#6366f1",
-        // 背景
         "background": {
           DEFAULT: "#f5f3ff",
           light: "#f8fafc",
           dark: "#0a0c1a",
         },
         "workspace-bg": "#F5F5F7",
-        // 表面 / 卡片
         "surface": {
           DEFAULT: "#ffffff",
           hover: "#f8fafc",
@@ -58,14 +56,44 @@ export default {
           foreground: "#1e1b4b",
           dark: "#0f1117",
         },
-        // 玻璃效果
         "glass-border": "rgba(0, 0, 0, 0.08)",
         "glass-surface": "rgba(255, 255, 255, 0.7)",
         "off-white": "#f4f7f9",
+
+        // Cinematic Ethereal 暗色主题色系
+        "cm": {
+          "surface": "#0c0e12",
+          "surface-dim": "#0c0e12",
+          "surface-container": "#171a1f",
+          "surface-low": "#111318",
+          "surface-high": "#1c2026",
+          "surface-highest": "#22262e",
+          "surface-lowest": "#000000",
+          "surface-bright": "#282c35",
+          "surface-variant": "#22262e",
+          "on-surface": "#e2e5f0",
+          "on-surface-variant": "#a8abb5",
+          "primary": "#99f7ff",
+          "primary-dim": "#00e2ee",
+          "primary-container": "#00f1fe",
+          "on-primary": "#005f64",
+          "secondary": "#ecb2ff",
+          "secondary-dim": "#bb00fc",
+          "secondary-container": "#42005b",
+          "tertiary": "#fface8",
+          "tertiary-dim": "#ff59e3",
+          "outline": "#72757f",
+          "outline-variant": "#444850",
+          "error": "#ff716c",
+          "surface-tint": "#99f7ff",
+        },
       },
       fontFamily: {
         "display": ["Plus Jakarta Sans", "CascadiaNextSC", "CascadiaNextJP", "sans-serif"],
         "sans": ["Plus Jakarta Sans", "CascadiaNextSC", "CascadiaNextJP", "sans-serif"],
+        "headline": ["Manrope", "Plus Jakarta Sans", "sans-serif"],
+        "body": ["Plus Jakarta Sans", "sans-serif"],
+        "label": ["Inter", "sans-serif"],
       },
       boxShadow: {
         'sm': '0 1px 2px rgba(0,0,0,0.05)',
@@ -79,6 +107,12 @@ export default {
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
         'soft-xl': '0 20px 40px -10px rgba(0, 0, 0, 0.08)',
         'primary': '0 4px 14px rgba(99,102,241,0.25)',
+        // Cinema theme shadows
+        'cm-glass': '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+        'cm-neon': '0 0 20px rgba(153, 247, 255, 0.3)',
+        'cm-neon-secondary': '0 0 20px rgba(236, 178, 255, 0.3)',
+        'cm-neon-tertiary': '0 0 20px rgba(255, 172, 232, 0.3)',
+        'cm-ambient': '0 0 40px rgba(153, 247, 255, 0.05)',
       },
       borderRadius: {
         DEFAULT: '0.625rem',
@@ -89,6 +123,45 @@ export default {
       },
       transitionDuration: {
         DEFAULT: '200ms',
+      },
+      animation: {
+        'cm-float': 'cm-float 6s ease-in-out infinite',
+        'cm-pulse-glow': 'cm-pulse-glow 4s ease-in-out infinite',
+        'cm-fade-in': 'cm-fade-in 0.4s ease-out',
+        'cm-slide-in': 'cm-slide-in 0.3s ease-out',
+        'cm-zoom-in': 'cm-zoom-in 0.3s ease-out',
+        'cm-shimmer': 'cm-shimmer 1.5s infinite',
+        'cm-breathe': 'cm-breathe 4s ease-in-out infinite',
+      },
+      keyframes: {
+        'cm-float': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        'cm-pulse-glow': {
+          '0%, 100%': { opacity: '0.5' },
+          '50%': { opacity: '0.8' },
+        },
+        'cm-fade-in': {
+          from: { opacity: '0', transform: 'translateY(10px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'cm-slide-in': {
+          from: { opacity: '0', transform: 'translateX(-20px)' },
+          to: { opacity: '1', transform: 'translateX(0)' },
+        },
+        'cm-zoom-in': {
+          from: { opacity: '0', transform: 'scale(0.95)' },
+          to: { opacity: '1', transform: 'scale(1)' },
+        },
+        'cm-shimmer': {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        'cm-breathe': {
+          '0%, 100%': { opacity: '0.03' },
+          '50%': { opacity: '0.08' },
+        },
       },
     },
   },
