@@ -1,8 +1,10 @@
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { HomePage } from './pages/HomePage';
 import { getRoutableTools } from './tools/_registry';
+
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
 
 function ToolLoadingFallback() {
   return (
@@ -31,6 +33,15 @@ export default function App() {
               }
             />
           ))}
+          {/* Admin 管理后台 */}
+          <Route
+            path="/admin"
+            element={
+              <Suspense fallback={<ToolLoadingFallback />}>
+                <AdminLayout />
+              </Suspense>
+            }
+          />
           {/* 向后兼容旧路由 */}
           <Route path="/create" element={<Navigate to="/tools/script-rating" replace />} />
         </Route>

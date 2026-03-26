@@ -3,6 +3,7 @@ import { Clapperboard, ImagePlus, Wand2 } from 'lucide-react';
 import type { ToolDefinition } from './types';
 
 const ScriptRatingPage = lazy(() => import('./script-rating/page'));
+const OutpaintPage = lazy(() => import('./outpaint/page'));
 
 export const toolRegistry: readonly ToolDefinition[] = [
   {
@@ -21,8 +22,9 @@ export const toolRegistry: readonly ToolDefinition[] = [
     description: '智能扩展图片边界，AI 自动补全画面内容，支持多比例输出',
     icon: ImagePlus,
     route: '/tools/outpaint',
-    status: 'coming_soon',
+    status: 'available',
     accentColor: 'secondary',
+    component: OutpaintPage,
   },
   {
     id: 'storyboard',
