@@ -27,31 +27,14 @@ import type {
   ProviderId,
 } from '../types/models';
 import {
-  SYSTEM_PROMPT,
-  STRUCTURE_ANALYSIS_PROMPT,
-  CHARACTER_ANALYSIS_PROMPT,
-  EMOTION_ANALYSIS_PROMPT,
-  MARKET_ANALYSIS_PROMPT,
-  COMPLIANCE_ANALYSIS_PROMPT,
-  COMPREHENSIVE_RATING_PROMPT,
   fillPrompt,
   ANALYSIS_PHASES_CONFIG,
 } from './prompts.ts';
 import {
-  EXECUTIVE_SUMMARY_PROMPT,
-  MARKET_RESONANCE_DETAILED_PROMPT,
-  NARRATIVE_DNA_DETAILED_PROMPT,
-  COMMERCIAL_COMPLIANCE_DETAILED_PROMPT,
-  ACTIONABLE_RECOMMENDATIONS_PROMPT,
-  PRODUCTION_ANALYSIS_PROMPT,
-  STRUCTURE_DETAILED_PROMPT,
-  CHARACTER_DETAILED_PROMPT,
-  EMOTION_DETAILED_PROMPT,
-  getMarketDetailedPrompt,
-  getRiskDetailedPrompt,
   fillDetailedPrompt,
   DETAILED_ANALYSIS_PHASES,
 } from './prompts-detailed.ts';
+import { resolvePrompts } from './prompt-resolver.ts';
 import { callWithSplitRetry } from './split-retry.ts';
 import { buildSubGroupPrompt, NARRATIVE_SPLIT_GROUPS, COMMERCIAL_SPLIT_GROUPS } from './prompts-split.ts';
 import { type MarketType, getMarketContextPrompt } from './market-context.ts';
@@ -770,7 +753,8 @@ async function analyzePhase<T>(
   phaseName: string,
   onProgress?: ProgressCallback,
   phaseIndex = 0,
-  options?: ChatOptions
+  options?: ChatOptions,
+  systemPrompt?: string
 ): Promise<T> {
   onProgress?.(0, phaseName, '准备分析...', phaseIndex);
 
@@ -780,7 +764,7 @@ async function analyzePhase<T>(
 
   const result = await callAndExtractJSON<T>(
     [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt ?? '' },
       { role: 'user', content: prompt },
     ],
     {
@@ -804,6 +788,7 @@ export async function analyzeScriptAdvanced(
   onPhaseComplete?: (phase: AnalysisPhase) => void,
   modelOptions?: ChatOptions
 ): Promise<AdvancedRatingResult> {
+  const p = await resolvePrompts();
   const startTime = Date.now();
   const phases: AnalysisPhase[] = ANALYSIS_PHASES_CONFIG.map((config) => ({
     id: config.id,
@@ -847,11 +832,12 @@ export async function analyzeScriptAdvanced(
       { structureAnalysis: StructureAnalysis } & Record<string, unknown>
     >(
       scriptContent,
-      STRUCTURE_ANALYSIS_PROMPT,
+      p.STRUCTURE_ANALYSIS_PROMPT,
       '结构与世界观分析',
       createPhaseProgress(0),
       0,
-      modelOptions
+      modelOptions,
+      p.SYSTEM_PROMPT
     );
     updatePhase(0, { status: 'completed', endTime: Date.now() });
 
@@ -861,11 +847,12 @@ export async function analyzeScriptAdvanced(
       { characterAnalysis: CharacterAnalysis } & Record<string, unknown>
     >(
       scriptContent,
-      CHARACTER_ANALYSIS_PROMPT,
+      p.CHARACTER_ANALYSIS_PROMPT,
       '人物分析',
       createPhaseProgress(1),
       1,
-      modelOptions
+      modelOptions,
+      p.SYSTEM_PROMPT
     );
     updatePhase(1, { status: 'completed', endTime: Date.now() });
 
@@ -875,11 +862,12 @@ export async function analyzeScriptAdvanced(
       { emotionAnalysis: EmotionAnalysis } & Record<string, unknown>
     >(
       scriptContent,
-      EMOTION_ANALYSIS_PROMPT,
+      p.EMOTION_ANALYSIS_PROMPT,
       '情感与爽点分析',
       createPhaseProgress(2),
       2,
-      modelOptions
+      modelOptions,
+      p.SYSTEM_PROMPT
     );
     updatePhase(2, { status: 'completed', endTime: Date.now() });
 
@@ -892,11 +880,12 @@ export async function analyzeScriptAdvanced(
       } & Record<string, unknown>
     >(
       scriptContent,
-      MARKET_ANALYSIS_PROMPT,
+      p.MARKET_ANALYSIS_PROMPT,
       'AI漫剧市场分析',
       createPhaseProgress(3),
       3,
-      modelOptions
+      modelOptions,
+      p.SYSTEM_PROMPT
     );
     updatePhase(3, { status: 'completed', endTime: Date.now() });
 
@@ -906,18 +895,19 @@ export async function analyzeScriptAdvanced(
       { riskAssessment: RiskAssessment } & Record<string, unknown>
     >(
       scriptContent,
-      COMPLIANCE_ANALYSIS_PROMPT,
+      p.COMPLIANCE_ANALYSIS_PROMPT,
       'AI内容合规审查',
       createPhaseProgress(4),
       4,
-      modelOptions
+      modelOptions,
+      p.SYSTEM_PROMPT
     );
     updatePhase(4, { status: 'completed', endTime: Date.now() });
 
     // Final: 综合评级
     onProgress?.(90, '综合评级', '生成最终报告...', 5);
 
-    const comprehensivePrompt = fillPrompt(COMPREHENSIVE_RATING_PROMPT, {
+    const comprehensivePrompt = fillPrompt(p.COMPREHENSIVE_RATING_PROMPT, {
       STRUCTURE_DATA: JSON.stringify(structureResult),
       CHARACTER_DATA: JSON.stringify(characterResult),
       EMOTION_DATA: JSON.stringify(emotionResult),
@@ -927,7 +917,7 @@ export async function analyzeScriptAdvanced(
 
     const ratingResult = await callAndExtractJSON<RatingResult>(
       [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: p.SYSTEM_PROMPT },
         { role: 'user', content: comprehensivePrompt },
       ],
       {
@@ -1058,6 +1048,7 @@ export async function analyzeScript(
   onProgress?: (progress: number, step: string) => void,
   modelOptions?: ChatOptions
 ): Promise<RatingResult> {
+  const prompts = await resolvePrompts();
   onProgress?.(10, '准备分析请求...');
 
   const prompt = fillPrompt(SIMPLE_RATING_PROMPT, {
@@ -1068,7 +1059,7 @@ export async function analyzeScript(
 
   const result = await callAndExtractJSON<RatingResult>(
     [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: prompts.SYSTEM_PROMPT },
       { role: 'user', content: prompt },
     ],
     {
@@ -1212,6 +1203,7 @@ export async function analyzeScriptDetailed(
   marketType: MarketType = 'domestic',
   outputLanguage: 'zh' | 'en' = 'zh'
 ): Promise<AdvancedRatingResult & DetailedAnalysisResult> {
+  const p = await resolvePrompts();
   const startTime = Date.now();
 
   // 生成市场上下文增强的系统提示词
@@ -1219,7 +1211,7 @@ export async function analyzeScriptDetailed(
   const languageSuffix = outputLanguage === 'en'
     ? '\n\n重要：本剧本台词为英文（面向海外华人市场）。请注意：\n1. 分析英文台词的质量、自然度、是否有Chinglish问题\n2. 引用原文台词时保留英文原文\n3. 所有分析文本、发现、建议、推荐等内容必须使用中文输出\n4. JSON字段名保持不变，文本内容值使用中文'
     : '';
-  const marketSystemPrompt = `${SYSTEM_PROMPT}\n\n${marketContext}${languageSuffix}`;
+  const marketSystemPrompt = `${p.SYSTEM_PROMPT}\n\n${marketContext}${languageSuffix}`;
 
   // 使用更高的 maxTokens 以获取更详细的输出
   const detailedOptions: ChatOptions = {
@@ -1297,7 +1289,7 @@ export async function analyzeScriptDetailed(
       // Round 1: 制作分析
       runPhase(0, '制作分析', '分析AI生成概率和制作难度...', () =>
         callAndExtractJSON<NonNullable<DetailedAnalysisResult['productionAnalysis']>>(
-          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(PRODUCTION_ANALYSIS_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(p.PRODUCTION_ANALYSIS_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
           detailedOptions,
           '制作分析'
         )
@@ -1305,7 +1297,7 @@ export async function analyzeScriptDetailed(
       // Round 3: 结构分析
       runPhase(2, '结构分析', '分析世界观、三幕结构、转折点...', () =>
         callAndExtractJSON<StructureAnalysis>(
-          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(STRUCTURE_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(p.STRUCTURE_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
           detailedOptions,
           '结构分析'
         )
@@ -1313,7 +1305,7 @@ export async function analyzeScriptDetailed(
       // Round 4: 人物分析
       runPhase(3, '人物分析', '分析角色塑造、人物关系、金句...', () =>
         callAndExtractJSON<CharacterAnalysis>(
-          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(CHARACTER_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(p.CHARACTER_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
           detailedOptions,
           '人物分析'
         )
@@ -1321,7 +1313,7 @@ export async function analyzeScriptDetailed(
       // Round 5: 情感分析
       runPhase(4, '情感分析', '分析情绪曲线、爽点分布...', () =>
         callAndExtractJSON<EmotionAnalysis>(
-          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(EMOTION_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(p.EMOTION_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
           detailedOptions,
           '情感分析'
         )
@@ -1329,7 +1321,7 @@ export async function analyzeScriptDetailed(
       // Round 6: 市场共鸣
       runPhase(5, '市场共鸣', '分析目标受众、原创性、热播契合度...', () =>
         callAndExtractJSON<MarketResonanceAnalysis>(
-          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(MARKET_RESONANCE_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(p.MARKET_RESONANCE_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }))],
           detailedOptions,
           '市场共鸣'
         ),
@@ -1338,7 +1330,7 @@ export async function analyzeScriptDetailed(
       // Round 7: 市场定价
       runPhase(6, '市场定价', '分析定价建议、平台推荐、收益预测...', () =>
         callAndExtractJSON<MarketSuggestion>(
-          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(getMarketDetailedPrompt(marketType), { SCRIPT_CONTENT: scriptContent }))],
+          [sysMsg(marketSystemPrompt), userMsg(fillDetailedPrompt(p.getMarketDetailed(marketType), { SCRIPT_CONTENT: scriptContent }))],
           detailedOptions,
           '市场定价'
         )
@@ -1348,7 +1340,7 @@ export async function analyzeScriptDetailed(
         callWithSplitRetry<NarrativeDNAAnalysis>(
           callAndExtractJSON,
           marketSystemPrompt,
-          fillDetailedPrompt(NARRATIVE_DNA_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }),
+          fillDetailedPrompt(p.NARRATIVE_DNA_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }),
           detailedOptions,
           {
             phaseName: '叙事基因',
@@ -1363,7 +1355,7 @@ export async function analyzeScriptDetailed(
         callWithSplitRetry<Record<string, unknown>>(
           callAndExtractJSON,
           marketSystemPrompt,
-          fillDetailedPrompt(COMMERCIAL_COMPLIANCE_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }),
+          fillDetailedPrompt(p.COMMERCIAL_COMPLIANCE_DETAILED_PROMPT, { SCRIPT_CONTENT: scriptContent }),
           detailedOptions,
           {
             phaseName: '商业合规',
@@ -1403,7 +1395,7 @@ export async function analyzeScriptDetailed(
         callAndExtractJSON<NonNullable<DetailedAnalysisResult['executiveSummary']>>(
           [
             sysMsg(marketSystemPrompt),
-            userMsg(fillDetailedPrompt(EXECUTIVE_SUMMARY_PROMPT, {
+            userMsg(fillDetailedPrompt(p.EXECUTIVE_SUMMARY_PROMPT, {
               SCRIPT_CONTENT: scriptContent,
               PRODUCTION_DATA: JSON.stringify(result.productionAnalysis, null, 2),
             })),
@@ -1417,7 +1409,7 @@ export async function analyzeScriptDetailed(
         callAndExtractJSON<RiskAssessment>(
           [
             sysMsg(marketSystemPrompt),
-            userMsg(fillDetailedPrompt(getRiskDetailedPrompt(marketType), {
+            userMsg(fillDetailedPrompt(p.getRiskDetailed(marketType), {
               SCRIPT_CONTENT: scriptContent,
               PRODUCTION_DATA: JSON.stringify(result.productionAnalysis, null, 2),
               COMMERCIAL_DATA: JSON.stringify({
@@ -1447,7 +1439,7 @@ export async function analyzeScriptDetailed(
       }>(
         [
           sysMsg(marketSystemPrompt),
-          userMsg(fillDetailedPrompt(ACTIONABLE_RECOMMENDATIONS_PROMPT, {
+          userMsg(fillDetailedPrompt(p.ACTIONABLE_RECOMMENDATIONS_PROMPT, {
             PRODUCTION_DATA: JSON.stringify(result.productionAnalysis, null, 2),
             MARKET_RESONANCE_DATA: JSON.stringify(result.marketResonance),
             NARRATIVE_DNA_DATA: JSON.stringify(result.narrativeDNA),

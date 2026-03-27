@@ -4,6 +4,17 @@
 
 const API_BASE = '/api';
 
+/** 安全解析 JSON 响应，非 JSON 时抛出友好错误 */
+async function safeJson(res: Response): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  const text = await res.text();
+  if (!text) throw new Error(`服务器返回空响应 (${res.status})`);
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`服务器返回非 JSON 响应 (${res.status})，请确认后端已启动且路由已挂载`);
+  }
+}
+
 // ==================== 类型 ====================
 
 export interface PromptTemplate {
@@ -44,16 +55,16 @@ export interface HistoryRecord {
 export async function fetchPrompts(toolId?: string): Promise<PromptTemplate[]> {
   const url = toolId ? `${API_BASE}/admin/prompts?tool_id=${toolId}` : `${API_BASE}/admin/prompts`;
   const res = await fetch(url);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error);
-  return data.data;
+  const data = await safeJson(res);
+  if (!data.success) throw new Error(data.error || '获取失败');
+  return data.data as PromptTemplate[];
 }
 
 export async function fetchPrompt(id: string): Promise<PromptTemplate> {
   const res = await fetch(`${API_BASE}/admin/prompts/${id}`);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error);
-  return data.data;
+  const data = await safeJson(res);
+  if (!data.success) throw new Error(data.error || '获取失败');
+  return data.data as PromptTemplate;
 }
 
 export async function updatePrompt(
@@ -65,18 +76,18 @@ export async function updatePrompt(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
   });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error);
-  return data.data;
+  const data = await safeJson(res);
+  if (!data.success) throw new Error(data.error || '更新失败');
+  return data.data as PromptTemplate;
 }
 
 // ==================== 配置 ====================
 
 export async function fetchConfigs(): Promise<GlobalConfig[]> {
   const res = await fetch(`${API_BASE}/admin/configs`);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error);
-  return data.data;
+  const data = await safeJson(res);
+  if (!data.success) throw new Error(data.error || '获取失败');
+  return data.data as GlobalConfig[];
 }
 
 export async function updateConfig(key: string, updates: { value?: string; label?: string; description?: string }): Promise<GlobalConfig> {
@@ -85,9 +96,9 @@ export async function updateConfig(key: string, updates: { value?: string; label
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
   });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error);
-  return data.data;
+  const data = await safeJson(res);
+  if (!data.success) throw new Error(data.error || '更新失败');
+  return data.data as GlobalConfig;
 }
 
 // ==================== 历史 ====================
@@ -100,13 +111,13 @@ export async function fetchHistory(params?: { target_type?: string; target_id?: 
   if (params?.offset) searchParams.set('offset', String(params.offset));
 
   const res = await fetch(`${API_BASE}/admin/history?${searchParams}`);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error);
-  return data.data;
+  const data = await safeJson(res);
+  if (!data.success) throw new Error(data.error || '获取失败');
+  return data.data as HistoryRecord[];
 }
 
 export async function rollbackHistory(historyId: number): Promise<void> {
   const res = await fetch(`${API_BASE}/admin/history/${historyId}/rollback`, { method: 'POST' });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error);
+  const data = await safeJson(res);
+  if (!data.success) throw new Error(data.error || '回滚失败');
 }

@@ -18,10 +18,23 @@ import {
   isValidProviderModel,
 } from './config/outpaint-models.js';
 import { OfficialStableProvider } from './providers/official-stable.js';
-import { initDB } from './db/index.js';
-import { seedIfEmpty } from './db/seed.js';
+import { initDB, getConfig } from './db/index.js';
+import { seedAll } from './db/seed.js';
 import adminRouter from './routes/admin.js';
 import promptsRouter, { configsHandler } from './routes/prompts.js';
+
+/**
+ * 从数据库 global_configs 表读取配置（带 fallback）
+ * 每次调用实时读取，确保 Admin 修改立即生效
+ */
+function getDbConfig(key, fallback) {
+  try {
+    const row = getConfig(key);
+    return row ? row.value : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 dotenv.config();
 
@@ -47,9 +60,9 @@ const upload = multer({
   },
 });
 
-// 初始化数据库
+// 初始化数据库（seedAll 编译 TS 源文件获取真实提示词，使用 upsert 幂等写入）
 initDB();
-seedIfEmpty();
+await seedAll();
 
 // Middleware
 app.use(cors());
@@ -126,7 +139,10 @@ async function callAIAPI(provider, modelId, messages, options = {}) {
     qwen: 8000,
   };
 
-  const { temperature = 0.3, maxTokens = 8000, forceJson = false } = options;
+  // 从 DB 读取默认值（Admin 后台修改即时生效）
+  const dbMaxTokens = parseInt(getDbConfig('max_tokens', '8000'), 10);
+  const dbTemperature = parseFloat(getDbConfig('temperature', '0.3'));
+  const { temperature = dbTemperature, maxTokens = dbMaxTokens, forceJson = false } = options;
   // 确保 maxTokens 不超过提供商限制
   const providerMaxTokens = PROVIDER_MAX_TOKENS[provider] || 4096;
   const actualMaxTokens = Math.min(maxTokens, providerMaxTokens);
@@ -247,12 +263,18 @@ app.get('/api/providers', (req, res) => {
 // 统一聊天接口（支持多提供商）
 app.post('/api/chat', async (req, res) => {
   try {
+    // 从 DB 读取默认 provider/model（Admin 后台可调整）
+    const dbProvider = getDbConfig('default_ai_provider', DEFAULT_CONFIG.provider);
+    const dbModel = getDbConfig('default_ai_model', DEFAULT_CONFIG.model);
+    const dbTemp = parseFloat(getDbConfig('temperature', String(DEFAULT_CONFIG.temperature)));
+    const dbMaxTk = parseInt(getDbConfig('max_tokens', String(DEFAULT_CONFIG.maxTokens)), 10);
+
     const {
-      provider = DEFAULT_CONFIG.provider,
-      model,
+      provider = dbProvider,
+      model = dbModel,
       messages,
-      temperature = DEFAULT_CONFIG.temperature,
-      max_tokens = DEFAULT_CONFIG.maxTokens,
+      temperature = dbTemp,
+      max_tokens = dbMaxTk,
       force_json = false,
     } = req.body;
 

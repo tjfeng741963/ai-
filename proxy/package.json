@@ -14,5 +14,8 @@
     "express": "^4.21.0",
     "multer": "^2.1.1",
     "tencentcloud-sdk-nodejs-vod": "^4.1.201"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.4"
   }
 }

@@ -160,6 +160,20 @@ export function updateConfig(key, updates) {
   return d.prepare('SELECT * FROM global_configs WHERE key = ?').get(key);
 }
 
+/** 仅在配置不存在时插入（不覆盖用户修改的值） */
+export function insertConfigIfMissing(data) {
+  getDB().prepare(`
+    INSERT OR IGNORE INTO global_configs (key, value, label, description, type)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(
+    data.key,
+    data.value,
+    data.label || '',
+    data.description || '',
+    data.type || 'string',
+  );
+}
+
 /** 创建或更新配置（用于 seed） */
 export function upsertConfig(data) {
   getDB().prepare(`
