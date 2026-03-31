@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { RatingResult, RatingStatus } from '../types/rating';
+import type { RatingResult, RatingStatus, ContentType, TypedRatingResult } from '../types/rating';
 import type {
   AdvancedRatingResult,
   AnalysisPhase,
@@ -25,6 +25,7 @@ interface RatingState {
   status: RatingStatus;
   result: RatingResult | null;
   advancedResult: AdvancedRatingResult | null;
+  typedResult: TypedRatingResult | null;
   error: string | null;
   progress: number;
   currentStep: string;
@@ -32,6 +33,7 @@ interface RatingState {
 
   // 高级分析状态
   analysisMode: AnalysisMode;
+  contentType: ContentType;
   marketType: MarketType;
   outputLanguage: 'zh' | 'en';
   phases: AnalysisPhase[];
@@ -48,6 +50,7 @@ interface RatingState {
   // Actions
   setScriptContent: (content: string) => void;
   setAnalysisMode: (mode: AnalysisMode) => void;
+  setContentType: (type: ContentType) => void;
   setMarketType: (market: MarketType) => void;
   setOutputLanguage: (lang: 'zh' | 'en') => void;
   startAnalyzing: () => void;
@@ -55,6 +58,7 @@ interface RatingState {
   updatePhase: (phase: AnalysisPhase) => void;
   setResult: (result: RatingResult) => void;
   setAdvancedResult: (result: AdvancedRatingResult) => void;
+  setTypedResult: (result: TypedRatingResult) => void;
   setError: (error: string) => void;
   setActiveTab: (tab: RatingState['activeTab']) => void;
   reset: () => void;
@@ -85,6 +89,7 @@ export const useRatingStore = create<RatingState>((set, get) => ({
   status: 'idle',
   result: null,
   advancedResult: null,
+  typedResult: null,
   error: null,
   progress: 0,
   currentStep: '',
@@ -92,6 +97,7 @@ export const useRatingStore = create<RatingState>((set, get) => ({
 
   // 高级分析状态
   analysisMode: 'advanced',
+  contentType: 'short-drama' as ContentType,
   marketType: 'domestic' as MarketType,
   outputLanguage: 'zh' as const,
   phases: createInitialPhases(),
@@ -110,6 +116,8 @@ export const useRatingStore = create<RatingState>((set, get) => ({
 
   setAnalysisMode: (mode) => set({ analysisMode: mode }),
 
+  setContentType: (type) => set({ contentType: type }),
+
   setMarketType: (market) => set({ marketType: market }),
 
   setOutputLanguage: (lang) => set({ outputLanguage: lang }),
@@ -119,6 +127,7 @@ export const useRatingStore = create<RatingState>((set, get) => ({
       status: 'analyzing',
       result: null,
       advancedResult: null,
+      typedResult: null,
       error: null,
       progress: 0,
       currentStep: '准备分析...',
@@ -163,6 +172,14 @@ export const useRatingStore = create<RatingState>((set, get) => ({
       phases: result.analysisPhases || get().phases,
     }),
 
+  setTypedResult: (result) =>
+    set({
+      status: 'completed',
+      typedResult: result,
+      progress: 100,
+      currentStep: '分析完成',
+    }),
+
   setError: (error) =>
     set({
       status: 'error',
@@ -179,6 +196,7 @@ export const useRatingStore = create<RatingState>((set, get) => ({
       status: 'idle',
       result: null,
       advancedResult: null,
+      typedResult: null,
       error: null,
       progress: 0,
       currentStep: '',

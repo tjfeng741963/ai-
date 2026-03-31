@@ -28,7 +28,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
  */
 async function compileAndLoadPrompts() {
   const frontendDir = join(__dirname, '../../frontend/tools/script-rating/services');
-  const tmpDir = join(__dirname, '.compiled');
+  const tmpDir = join(__dirname, '../data/.compiled');
 
   if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
 

@@ -27,7 +27,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { useRatingStore } from './store/ratingStore';
-import { analyzeScript, analyzeScriptAdvanced, analyzeScriptDetailed } from './services/volcengine';
+import { analyzeScript, analyzeScriptAdvanced, analyzeScriptDetailed, analyzeScriptTyped } from './services/volcengine';
 import { DIMENSION_LABELS, GRADE_CONFIG } from './types/rating';
 import type { RatingResult, DimensionScore, GradeLevel } from './types/rating';
 import type { AdvancedRatingResult } from './types/rating-advanced';
@@ -43,6 +43,8 @@ import { ProductionFeasibility } from './components/ProductionFeasibility';
 import { RatingHistory } from './components/RatingHistory';
 import { ExecutiveSummary } from './components/ExecutiveSummary';
 import { DetailedAnalysisPanel } from './components/DetailedAnalysisPanel';
+import { ContentTypeSelector } from './components/ContentTypeSelector';
+import { TypedDimensionDisplay } from './components/TypedDimensionDisplay';
 import { exportRatingReport } from './services/export';
 import { extractScriptName } from './services/storage';
 import { GradeExplanation } from './components/GradeExplanation';
@@ -68,10 +70,13 @@ export default function ScriptRating() {
     status,
     result,
     advancedResult,
+    typedResult,
     error,
     progress,
     currentStep,
     analysisMode,
+    contentType,
+    setContentType,
     phases,
     currentPhaseIndex,
     activeTab,
@@ -89,6 +94,7 @@ export default function ScriptRating() {
     updatePhase,
     setResult,
     setAdvancedResult,
+    setTypedResult,
     setError,
     setActiveTab,
     reset,
@@ -152,12 +158,45 @@ export default function ScriptRating() {
           risks: result.risks ?? { compliance: [], market: [], production: [] },
         });
         setAdvancedResult(result);
+
+        // 同时执行类型化评测（补充维度数据）
+        try {
+          const typed = await analyzeScriptTyped(scriptContent, contentType);
+          setTypedResult(typed);
+        } catch {
+          // 类型化评测失败不影响主流程
+          console.warn('[类型化评测] 执行失败，跳过');
+        }
       } else {
-        // 快速分析模式
-        const result = await analyzeScript(scriptContent, (p, step) => {
+        // 快速分析模式 - 使用类型化评测（自动使用 ModelSelector 选中的模型）
+        const typed = await analyzeScriptTyped(scriptContent, contentType, (p, step) => {
           setProgress(p, step);
         });
-        setResult(result);
+        setTypedResult(typed);
+
+        // 构建兼容的 result 对象，使总览面板正常渲染
+        const compatDimensions: Record<string, DimensionScore> = {};
+        for (const [key, val] of Object.entries(typed.dimensions)) {
+          compatDimensions[key] = {
+            score: val.score,
+            weight: val.weight,
+            weighted: val.weighted,
+            analysis: val.analysis,
+            strengths: val.strengths,
+            weaknesses: val.weaknesses,
+            suggestions: val.suggestions,
+          };
+        }
+        setResult({
+          overallScore: typed.overallScore,
+          overallGrade: typed.overallGrade,
+          gradeLabel: typed.gradeLabel,
+          dimensions: compatDimensions as any,
+          summary: typed.summary,
+          highlights: typed.highlights,
+          improvements: typed.improvements,
+          risks: typed.risks,
+        });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '分析失败');
@@ -178,7 +217,7 @@ export default function ScriptRating() {
   };
 
   const isAnalyzing = status === 'analyzing';
-  const hasResult = result || advancedResult;
+  const hasResult = result || advancedResult || typedResult;
 
   return (
     <div className="min-h-screen p-6 bg-background">
@@ -258,6 +297,19 @@ export default function ScriptRating() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* 左侧：剧本输入 */}
             <div className="lg:col-span-2 space-y-4">
+              {/* 类型选择器 */}
+              <div className="bg-card rounded-2xl shadow-card p-5 border border-border">
+                <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-primary" />
+                  评测类型
+                </h2>
+                <ContentTypeSelector
+                  value={contentType}
+                  onChange={setContentType}
+                  disabled={isAnalyzing}
+                />
+              </div>
+
               <div className="bg-card rounded-2xl shadow-card p-6 border border-border hover:shadow-card-hover transition-shadow duration-200">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
@@ -379,6 +431,13 @@ export default function ScriptRating() {
               ) : (
                 <UploadGuide analysisMode={analysisMode} />
               )}
+
+              {/* 维度权重预览（非分析中时显示） */}
+              {!isAnalyzing && (
+                <div className="bg-card rounded-2xl shadow-card p-5 border border-border">
+                  <TypedDimensionDisplay contentType={contentType} previewOnly />
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -490,7 +549,7 @@ export default function ScriptRating() {
 
             {/* Tab 内容 */}
             <AnimatePresence mode="wait">
-              {activeTab === 'overview' && result && (
+              {activeTab === 'overview' && (result || typedResult) && (
                 <motion.div
                   key="overview"
                   initial={{ opacity: 0, y: 20 }}
@@ -611,12 +670,101 @@ export default function ScriptRating() {
                     />
                   )}
 
-                  {/* 基础评级面板 */}
-                  <RatingResultPanel
-                    result={result}
-                    expandedDimension={expandedDimension}
-                    setExpandedDimension={setExpandedDimension}
-                  />
+                  {/* 类型化维度评分（快速分析模式） */}
+                  {typedResult && (
+                    <div className="space-y-6">
+                      {/* 总评摘要卡片 */}
+                      <div className="bg-card rounded-2xl shadow-card p-6 border border-border">
+                        <div className="flex items-start gap-6">
+                          <div className="relative w-24 h-24 flex-shrink-0">
+                            <svg className="w-full h-full -rotate-90">
+                              <circle cx="48" cy="48" r="40" fill="none" stroke="#e0e7ff" strokeWidth="7" />
+                              <circle
+                                cx="48" cy="48" r="40" fill="none"
+                                stroke="url(#gradient-typed)"
+                                strokeWidth="7" strokeLinecap="round"
+                                strokeDasharray={`${(typedResult.overallScore / 10) * 251.33} 251.33`}
+                              />
+                              <defs>
+                                <linearGradient id="gradient-typed" x1="0%" y1="0%" x2="100%" y2="0%">
+                                  <stop offset="0%" stopColor="#6366f1" />
+                                  <stop offset="100%" stopColor="#4338ca" />
+                                </linearGradient>
+                              </defs>
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              <span className="text-2xl font-extrabold text-foreground">{typedResult.overallScore.toFixed(1)}</span>
+                              <span className="text-[10px] text-muted-foreground font-medium">/10</span>
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className={`text-3xl font-extrabold ${GRADE_CONFIG[typedResult.overallGrade]?.color ?? 'text-gray-500'}`}>
+                                {typedResult.overallGrade}
+                              </span>
+                              <span className={`px-3 py-1 rounded-full text-sm font-semibold ${GRADE_CONFIG[typedResult.overallGrade]?.bgColor ?? 'bg-gray-50'} ${GRADE_CONFIG[typedResult.overallGrade]?.color ?? 'text-gray-500'}`}>
+                                {typedResult.gradeLabel}
+                              </span>
+                            </div>
+                            <p className="text-foreground font-semibold mb-1">{typedResult.summary.oneSentence}</p>
+                            <p className="text-sm text-muted-foreground leading-relaxed">{typedResult.summary.paragraph}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 维度评分 */}
+                      <div className="bg-card rounded-2xl shadow-card p-6 border border-border">
+                        <TypedDimensionDisplay contentType={typedResult.contentType} result={typedResult} />
+                      </div>
+
+                      {/* 亮点与建议 */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-card rounded-2xl shadow-card p-5 border border-border">
+                          <h3 className="font-bold mb-3 flex items-center gap-2 text-emerald-600">
+                            <CheckCircle className="w-5 h-5" />
+                            核心亮点
+                          </h3>
+                          <ul className="space-y-2.5">
+                            {typedResult.highlights.top3Strengths.map((item, i) => (
+                              <li key={i} className="text-sm flex items-start gap-2">
+                                <span className="text-emerald-500 mt-0.5 font-bold">+</span>
+                                <span className="text-foreground">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="bg-card rounded-2xl shadow-card p-5 border border-border">
+                          <h3 className="font-bold mb-3 flex items-center gap-2 text-amber-600">
+                            <Lightbulb className="w-5 h-5" />
+                            改进建议
+                          </h3>
+                          <ul className="space-y-2.5">
+                            {typedResult.improvements.critical.map((item, i) => (
+                              <li key={i} className="text-sm flex items-start gap-2">
+                                <span className="text-destructive mt-0.5 font-bold">!</span>
+                                <span className="text-foreground">{item}</span>
+                              </li>
+                            ))}
+                            {typedResult.improvements.important.slice(0, 2).map((item, i) => (
+                              <li key={`imp-${i}`} className="text-sm flex items-start gap-2">
+                                <span className="text-amber-500 mt-0.5 font-bold">-</span>
+                                <span className="text-foreground">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 基础评级面板（深度分析模式使用原始16维度） */}
+                  {!typedResult && (
+                    <RatingResultPanel
+                      result={result}
+                      expandedDimension={expandedDimension}
+                      setExpandedDimension={setExpandedDimension}
+                    />
+                  )}
                 </motion.div>
               )}
 

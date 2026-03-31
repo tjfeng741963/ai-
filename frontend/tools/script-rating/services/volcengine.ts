@@ -43,8 +43,8 @@ import { type MarketType, getMarketContextPrompt } from './market-context.ts';
 const API_BASE = '/api';
 
 // 默认模型配置
-// 火山引擎豆包 endpoint: doubao-1-5-pro-32k-250115
-const DEFAULT_MODEL_ID = 'ep-20260317144814-4pqbx';
+// 火山引擎豆包 Seed 2.0 Lite（Model ID 直接调用）
+const DEFAULT_MODEL_ID = 'doubao-seed-2-0-lite-260215';
 const DEFAULT_PROVIDER: ProviderId = 'volcengine';
 
 // 当前模型选择（可由用户更改）
@@ -1566,6 +1566,104 @@ function normalizeScore(score: number): number {
     return score / 10;
   }
   return score;
+}
+
+// ==================== 类型化分析 ====================
+
+import type { ContentType, TypedRatingResult, TypedDimensionScore } from '../types/rating';
+import { getContentTypeConfig } from '../types/rating';
+import { getTypedPrompts, fillTypedAnalysisPrompt } from './prompts-typed';
+
+/**
+ * 类型化剧本分析 — 根据内容类型使用专用维度和提示词
+ */
+export async function analyzeScriptTyped(
+  scriptContent: string,
+  contentType: ContentType,
+  onProgress?: (progress: number, step: string) => void,
+  modelOptions?: ChatOptions
+): Promise<TypedRatingResult> {
+  const config = getContentTypeConfig(contentType);
+  const prompts = getTypedPrompts(contentType);
+
+  onProgress?.(5, `准备${config.label}评测...`);
+
+  const analysisPrompt = fillTypedAnalysisPrompt(contentType, scriptContent);
+
+  onProgress?.(15, `正在调用 AI 模型（${config.label}模式）...`);
+
+  const rawResult = await callAndExtractJSON<{
+    dimensions: Record<string, {
+      score: number;
+      analysis: string;
+      evidence?: string[];
+      strengths?: string[];
+      weaknesses?: string[];
+      suggestions?: string[];
+    }>;
+    summary: { oneSentence: string; paragraph: string };
+    highlights: { top3Strengths: string[]; uniqueSellingPoints: string[]; bestScenes: string[] };
+    improvements: { critical: string[]; important: string[]; optional: string[] };
+    risks: { compliance: string[]; market: string[]; production: string[] };
+  }>(
+    [
+      { role: 'system', content: prompts.system },
+      { role: 'user', content: analysisPrompt },
+    ],
+    {
+      ...modelOptions,
+      maxTokens: modelOptions?.maxTokens ?? 16000,
+      forceJson: true,
+      enableFallback: true,
+    },
+    `${config.label}评测`
+  );
+
+  onProgress?.(75, '正在计算加权评分...');
+
+  // 计算加权总分
+  const dimensions: Record<string, TypedDimensionScore> = {};
+  let totalWeightedScore = 0;
+
+  for (const dim of config.dimensions) {
+    const raw = rawResult.dimensions?.[dim.key];
+    const score = normalizeScore(raw?.score ?? 0);
+    const weighted = score * dim.weight;
+    totalWeightedScore += weighted;
+
+    dimensions[dim.key] = {
+      score,
+      weight: dim.weight,
+      weighted,
+      analysis: raw?.analysis ?? '',
+      evidence: raw?.evidence,
+      strengths: raw?.strengths,
+      weaknesses: raw?.weaknesses,
+      suggestions: raw?.suggestions,
+    };
+  }
+
+  const overallScore = Math.round(totalWeightedScore * 10) / 10;
+  const overallGrade = overallScore >= 8.5 ? 'S'
+    : overallScore >= 7.0 ? 'A'
+    : overallScore >= 5.5 ? 'B'
+    : overallScore >= 4.0 ? 'C'
+    : 'D';
+  const gradeLabels = { S: '爆款潜力', A: '优质作品', B: '良好作品', C: '待完善', D: '需大幅修改' } as const;
+
+  onProgress?.(100, '评测完成');
+
+  return {
+    contentType,
+    overallScore,
+    overallGrade,
+    gradeLabel: gradeLabels[overallGrade],
+    dimensions,
+    summary: rawResult.summary ?? { oneSentence: '', paragraph: '' },
+    highlights: rawResult.highlights ?? { top3Strengths: [], uniqueSellingPoints: [], bestScenes: [] },
+    improvements: rawResult.improvements ?? { critical: [], important: [], optional: [] },
+    risks: rawResult.risks ?? { compliance: [], market: [], production: [] },
+  };
 }
 
 /** 从详细分析结果构建 dimensions 对象 */

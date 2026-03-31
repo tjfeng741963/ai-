@@ -66,15 +66,25 @@ export const PROVIDER_ENDPOINTS = {
 };
 
 // 预设模型配置
-// 注意：火山引擎必须使用 endpoint ID，不支持模型名称
+// 火山引擎支持 endpoint ID 和 Model ID 两种调用方式
 export const PRESET_MODELS = {
-  // 火山引擎豆包 - 使用 endpoint ID
+  // 火山引擎豆包 - endpoint ID 调用
   'ep-20260317144814-4pqbx': {
     provider: 'volcengine',
     name: '豆包1.5 Pro 32K',
     description: 'doubao-1-5-pro-32k-250115，适合中文剧本深度分析',
     maxTokens: 8000,
     contextLength: 32000,
+  },
+
+  // 火山引擎豆包 Seed - Model ID 直接调用（使用独立 API Key）
+  'doubao-seed-2-0-lite-260215': {
+    provider: 'volcengine',
+    name: '豆包 Seed 2.0 Lite',
+    description: '豆包Seed最新模型，深度剧本评测首选',
+    maxTokens: 8000,
+    contextLength: 32000,
+    envKey: 'VOLCENGINE_API_KEY_SEED',
   },
 
   // OpenAI
@@ -231,7 +241,9 @@ export function getAvailableModels(env = process.env) {
 
   for (const [modelId, config] of Object.entries(PRESET_MODELS)) {
     const provider = PROVIDER_ENDPOINTS[config.provider];
-    const hasKey = !!env[provider.envKey];
+    // 模型级别 envKey 优先，否则用 provider 级别
+    const envKeyToCheck = config.envKey || provider.envKey;
+    const hasKey = !!env[envKeyToCheck];
 
     available.push({
       id: modelId,

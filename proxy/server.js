@@ -121,11 +121,14 @@ function convertClaudeResponse(claudeResponse) {
  */
 async function callAIAPI(provider, modelId, messages, options = {}) {
   const providerConfig = getProviderConfig(provider);
-  const apiKey = process.env[providerConfig.envKey];
+  // 模型级别 envKey 优先，否则使用 provider 级别
+  const modelCfg = getModelConfig(modelId);
+  const envKey = modelCfg?.envKey || providerConfig.envKey;
+  const apiKey = process.env[envKey];
 
   if (!apiKey) {
     throw new Error(
-      `未配置 ${providerConfig.name} API Key，请在 .env 文件中设置 ${providerConfig.envKey}`
+      `未配置 ${providerConfig.name} API Key，请在 .env 文件中设置 ${envKey}`
     );
   }
 

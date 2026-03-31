@@ -63,11 +63,11 @@ export interface ModelSelection {
 export const MODEL_GROUPS: Record<string, { label: string; models: string[] }> = {
   recommended: {
     label: '推荐',
-    models: ['ep-20260317144814-4pqbx', 'gpt-4o', 'claude-3-sonnet', 'deepseek-chat'],
+    models: ['doubao-seed-2-0-lite-260215', 'ep-20260317144814-4pqbx', 'gpt-4o', 'claude-3-sonnet', 'deepseek-chat'],
   },
   volcengine: {
     label: '火山引擎',
-    models: ['ep-20260317144814-4pqbx'],
+    models: ['doubao-seed-2-0-lite-260215', 'ep-20260317144814-4pqbx'],
   },
   openai: {
     label: 'OpenAI',
@@ -79,6 +79,6 @@ export const MODEL_GROUPS: Record<string, { label: string; models: string[] }> =
   },
   chinese: {
     label: '国产大模型',
-    models: ['ep-20260317144814-4pqbx', 'deepseek-chat', 'moonshot-v1-32k', 'qwen-max'],
+    models: ['doubao-seed-2-0-lite-260215', 'ep-20260317144814-4pqbx', 'deepseek-chat', 'moonshot-v1-32k', 'qwen-max'],
   },
 };
