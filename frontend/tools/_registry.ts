@@ -1,9 +1,10 @@
 import { lazy } from 'react';
-import { Clapperboard, ImagePlus, Wand2 } from 'lucide-react';
+import { Clapperboard, ImagePlus, Megaphone, Wand2 } from 'lucide-react';
 import type { ToolDefinition } from './types';
 
 const ScriptRatingPage = lazy(() => import('./script-rating/page'));
 const OutpaintPage = lazy(() => import('./outpaint/page'));
+const AdScriptPage = lazy(() => import('./ad-script/page'));
 
 export const toolRegistry: readonly ToolDefinition[] = [
   {
@@ -25,6 +26,16 @@ export const toolRegistry: readonly ToolDefinition[] = [
     status: 'available',
     accentColor: 'secondary',
     component: OutpaintPage,
+  },
+  {
+    id: 'ad-script',
+    name: '广告剧本',
+    description: 'AI广告创意总监，对话式生成电商信息流广告短剧本，支持产品图片和淘宝链接输入',
+    icon: Megaphone,
+    route: '/tools/ad-script',
+    status: 'beta',
+    accentColor: 'tertiary',
+    component: AdScriptPage,
   },
   {
     id: 'storyboard',

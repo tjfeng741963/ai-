@@ -129,6 +129,7 @@ export default {
         'cm-pulse-glow': 'cm-pulse-glow 4s ease-in-out infinite',
         'cm-fade-in': 'cm-fade-in 0.4s ease-out',
         'cm-slide-in': 'cm-slide-in 0.3s ease-out',
+        'slide-in-right': 'slide-in-right 0.25s ease-out',
         'cm-zoom-in': 'cm-zoom-in 0.3s ease-out',
         'cm-shimmer': 'cm-shimmer 1.5s infinite',
         'cm-breathe': 'cm-breathe 4s ease-in-out infinite',
@@ -161,6 +162,10 @@ export default {
         'cm-breathe': {
           '0%, 100%': { opacity: '0.03' },
           '50%': { opacity: '0.08' },
+        },
+        'slide-in-right': {
+          from: { transform: 'translateX(100%)' },
+          to: { transform: 'translateX(0)' },
         },
       },
     },
