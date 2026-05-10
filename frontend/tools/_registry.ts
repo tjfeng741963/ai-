@@ -1,10 +1,12 @@
 import { lazy } from 'react';
-import { Clapperboard, ImagePlus, Megaphone, Wand2 } from 'lucide-react';
+import { Clapperboard, ImagePlus, Megaphone, Wand2, Rocket, Video } from 'lucide-react';
 import type { ToolDefinition } from './types';
 
 const ScriptRatingPage = lazy(() => import('./script-rating/page'));
 const OutpaintPage = lazy(() => import('./outpaint/page'));
 const AdScriptPage = lazy(() => import('./ad-script/page'));
+const SpaceLandingPage = lazy(() => import('./space-landing/page'));
+const VideoPromptPage = lazy(() => import('./video-prompt/page'));
 
 export const toolRegistry: readonly ToolDefinition[] = [
   {
@@ -38,6 +40,16 @@ export const toolRegistry: readonly ToolDefinition[] = [
     component: AdScriptPage,
   },
   {
+    id: 'video-prompt',
+    name: '视频分镜',
+    description: '一句话生成拍摄分镜脚本，上传参考图即可用于任何视频工作流',
+    icon: Video,
+    route: '/tools/video-prompt',
+    status: 'beta',
+    accentColor: 'secondary',
+    component: VideoPromptPage,
+  },
+  {
     id: 'storyboard',
     name: '分镜生成',
     description: '从剧本自动生成分镜脚本，AI 绘制概念画面，加速预制流程',
@@ -46,6 +58,17 @@ export const toolRegistry: readonly ToolDefinition[] = [
     status: 'coming_soon',
     accentColor: 'tertiary',
   },
+  {
+    id: 'space-landing',
+    name: '星际着陆页',
+    description: '沉浸式星际旅行落地页 — 液态玻璃设计系统 · 视频背景 · 逐词动画',
+    icon: Rocket,
+    route: '/space-landing',
+    status: 'available',
+    accentColor: 'secondary',
+    component: SpaceLandingPage,
+    fullscreen: true,
+  },
 ];
 
 /** 获取所有可见工具（首页展示用） */
@@ -53,10 +76,18 @@ export function getVisibleTools(): readonly ToolDefinition[] {
   return toolRegistry;
 }
 
-/** 获取有路由的工具（动态路由注册用） */
+/** 获取有路由的工具（动态路由注册用，不含全屏工具） */
 export function getRoutableTools(): readonly ToolDefinition[] {
   return toolRegistry.filter(
     (t): t is ToolDefinition & { component: NonNullable<ToolDefinition['component']> } =>
-      (t.status === 'available' || t.status === 'beta') && t.component != null,
+      (t.status === 'available' || t.status === 'beta') && t.component != null && !t.fullscreen,
+  );
+}
+
+/** 获取全屏工具（在 AppLayout 外单独注册路由） */
+export function getFullscreenTools(): readonly ToolDefinition[] {
+  return toolRegistry.filter(
+    (t): t is ToolDefinition & { component: NonNullable<ToolDefinition['component']> } =>
+      t.fullscreen === true && t.component != null,
   );
 }
