@@ -134,6 +134,20 @@ export const PRESET_MODELS = {
   },
 
   // DeepSeek
+  'deepseek-v4-pro': {
+    provider: 'deepseek',
+    name: 'DeepSeek V4 Pro',
+    description: '最新通用大模型，多模态能力强，广告剧本Agent首选',
+    maxTokens: 8192,
+    contextLength: 64000,
+  },
+  'deepseek-v4-flash': {
+    provider: 'deepseek',
+    name: 'DeepSeek V4 Flash',
+    description: '快速版本，适合对话理解',
+    maxTokens: 8192,
+    contextLength: 64000,
+  },
   'deepseek-chat': {
     provider: 'deepseek',
     name: 'DeepSeek Chat',

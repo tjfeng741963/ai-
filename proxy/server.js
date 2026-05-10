@@ -22,6 +22,7 @@ import { initDB, getConfig } from './db/index.js';
 import { seedAll } from './db/seed.js';
 import adminRouter from './routes/admin.js';
 import promptsRouter, { configsHandler } from './routes/prompts.js';
+import adScriptRouter from './routes/ad-script.js';
 
 /**
  * 从数据库 global_configs 表读取配置（带 fallback）
@@ -72,6 +73,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use('/api/admin', adminRouter);
 app.use('/api/prompts', promptsRouter);
 app.get('/api/configs', configsHandler);
+
+// 广告剧本Agent路由
+app.use('/api/ad-script', adScriptRouter);
 
 // ==================== 工具函数 ====================
 

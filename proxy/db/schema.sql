@@ -36,7 +36,31 @@ CREATE TABLE IF NOT EXISTS config_history (
   created_at  TEXT DEFAULT (datetime('now'))
 );
 
+-- 广告剧本会话
+CREATE TABLE IF NOT EXISTS ad_script_sessions (
+  id              TEXT PRIMARY KEY,
+  title           TEXT NOT NULL DEFAULT '新对话',
+  current_step    INTEGER NOT NULL DEFAULT 1,
+  product_profile TEXT NOT NULL DEFAULT '{}',
+  step_confirmed  TEXT NOT NULL DEFAULT '{}',
+  status          TEXT NOT NULL DEFAULT 'active',
+  created_at      TEXT DEFAULT (datetime('now')),
+  updated_at      TEXT DEFAULT (datetime('now'))
+);
+
+-- 广告剧本消息
+CREATE TABLE IF NOT EXISTS ad_script_messages (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT NOT NULL REFERENCES ad_script_sessions(id) ON DELETE CASCADE,
+  role       TEXT NOT NULL,
+  content    TEXT NOT NULL,
+  step       INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- 索引
 CREATE INDEX IF NOT EXISTS idx_prompt_tool ON prompt_templates(tool_id);
 CREATE INDEX IF NOT EXISTS idx_history_target ON config_history(target_type, target_id);
 CREATE INDEX IF NOT EXISTS idx_history_created ON config_history(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ad_sessions_updated ON ad_script_sessions(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ad_messages_session ON ad_script_messages(session_id);
