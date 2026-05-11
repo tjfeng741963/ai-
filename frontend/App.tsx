@@ -2,7 +2,7 @@ import { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { HomePage } from './pages/HomePage';
-import { getRoutableTools } from './tools/_registry';
+import { getRoutableTools, getFullscreenTools } from './tools/_registry';
 
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
 
@@ -16,10 +16,23 @@ function ToolLoadingFallback() {
 
 export default function App() {
   const routableTools = getRoutableTools();
+  const fullscreenTools = getFullscreenTools();
 
   return (
     <HashRouter>
       <Routes>
+        {/* 全屏工具路由——不走 AppLayout */}
+        {fullscreenTools.map((tool) => (
+          <Route
+            key={tool.id}
+            path={tool.route}
+            element={
+              <Suspense fallback={<ToolLoadingFallback />}>
+                <tool.component />
+              </Suspense>
+            }
+          />
+        ))}
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           {routableTools.map((tool) => (

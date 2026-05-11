@@ -94,6 +94,8 @@ export default {
         "headline": ["Manrope", "Plus Jakarta Sans", "sans-serif"],
         "body": ["Plus Jakarta Sans", "sans-serif"],
         "label": ["Inter", "sans-serif"],
+        "serif-display": ["Instrument Serif", "serif"],
+        "barlow": ["Barlow", "sans-serif"],
       },
       boxShadow: {
         'sm': '0 1px 2px rgba(0,0,0,0.05)',

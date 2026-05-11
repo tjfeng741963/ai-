@@ -25,4 +25,6 @@ export interface ToolDefinition {
   accentColor: ToolAccentColor;
   /** 懒加载页面组件（仅 available/beta 工具需要） */
   component?: ComponentType;
+  /** 全屏工具——不走 AppLayout，在 App.tsx 单独注册路由 */
+  fullscreen?: boolean;
 }
