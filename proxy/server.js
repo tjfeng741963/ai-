@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
+import { fileURLToPath } from 'url';
+import path from 'path';
 import {
   PROVIDER_ENDPOINTS,
   PRESET_MODELS,
@@ -38,7 +40,8 @@ function getDbConfig(key, fallback) {
   }
 }
 
-dotenv.config();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // 初始化官方稳定渠道 Provider（直接调用腾讯云，无需 scwh 认证）
 const officialStableProvider = new OfficialStableProvider();

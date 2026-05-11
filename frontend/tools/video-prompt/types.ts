@@ -1,9 +1,3 @@
-export interface ImageSlot {
-  id: string;
-  label: string;
-  placeholder: string;
-}
-
 export interface OptionCard {
   id: string;
   label: string;
@@ -18,7 +12,7 @@ export interface ChatMessage {
 
 export type ChatPhase = 'input' | 'confirming' | 'tier_select' | 'generating' | 'done';
 
-export type TierType = '15s' | '30s' | '60s';
+export type TierType = 'info_flow' | 'short_film';
 
 export interface TierSpec {
   label: string;
@@ -28,15 +22,23 @@ export interface TierSpec {
 }
 
 export const TIERS: Record<TierType, TierSpec> = {
-  '15s': { label: '15秒极速', shots: '3-5', duration: '15秒', desc: '快节奏产品闪现' },
-  '30s': { label: '30秒标准', shots: '5-8', duration: '30秒', desc: '完整功能展示' },
-  '60s': { label: '60秒详细', shots: '8-12', duration: '60秒', desc: '场景+功能+种草' },
+  info_flow: { label: '信息流', shots: '12-25', duration: '0-3分钟', desc: '快节奏电商信息流，每镜≤15秒' },
+  short_film: { label: '短片', shots: '20-50', duration: '3-10分钟', desc: '完整叙事短片，每镜≤15秒' },
 };
 
 export interface SSEEvent {
-  type: 'delta' | 'options' | 'slots' | 'content_replace' | 'done' | 'error';
+  type: 'delta' | 'options' | 'content_replace' | 'done' | 'error';
   content?: string;
   options?: OptionCard[];
-  slots?: ImageSlot[];
   error?: string;
+}
+
+export interface SessionRecord {
+  id: string;
+  title: string;
+  createdAt: string;
+  chatMessages: ChatMessage[];
+  storyboardText: string;
+  selectedStyle: string | null;
+  selectedTier: TierType | null;
 }

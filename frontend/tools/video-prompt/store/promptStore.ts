@@ -1,7 +1,22 @@
 import { create } from 'zustand';
-import type { ChatMessage, ChatPhase, TierType, ImageSlot, OptionCard } from '../types';
-import { stripOptionsMarker, extractImageSlots } from '../utils';
+import type { ChatMessage, ChatPhase, TierType, OptionCard, SessionRecord } from '../types';
+import { stripOptionsMarker } from '../utils';
 import { sendChat, generateStoryboard } from '../services/api';
+
+const HISTORY_KEY = 'vp_sessions';
+const MAX_HISTORY = 20;
+
+function loadHistory(): SessionRecord[] {
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(sessions: SessionRecord[]) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(sessions.slice(0, MAX_HISTORY)));
+}
 
 interface PromptState {
   input: string;
@@ -12,22 +27,21 @@ interface PromptState {
   options: OptionCard[];
   isStreaming: boolean;
   storyboardText: string | null;
-  imageSlots: ImageSlot[];
-  slotImages: Record<string, string>;
   error: string | null;
+  sessions: SessionRecord[];
 
   setInput: (v: string) => void;
   setSelectedTier: (t: TierType) => void;
-  setSlotImage: (slotId: string, base64: string) => void;
-  removeSlotImage: (slotId: string) => void;
   reset: () => void;
-  sendMessage: (message: string) => Promise<void>;
+  sendMessage: (message: string, options?: { images?: string[]; productUrl?: string }) => Promise<void>;
   selectOption: (option: OptionCard) => void;
   generate: () => Promise<void>;
   getFullScript: () => string;
+  loadSession: (session: SessionRecord) => void;
+  deleteSession: (id: string) => void;
 }
 
-const INITIAL_STATE = {
+const INITIAL_WORK_STATE = {
   input: '',
   chatMessages: [] as ChatMessage[],
   chatPhase: 'input' as ChatPhase,
@@ -36,35 +50,31 @@ const INITIAL_STATE = {
   options: [] as OptionCard[],
   isStreaming: false,
   storyboardText: null as string | null,
-  imageSlots: [] as ImageSlot[],
-  slotImages: {} as Record<string, string>,
   error: null as string | null,
 };
 
 export const usePromptStore = create<PromptState>((set, get) => ({
-  ...INITIAL_STATE,
+  ...INITIAL_WORK_STATE,
+  sessions: loadHistory(),
 
   setInput: (input) => set({ input }),
 
   setSelectedTier: (tier) => set({ selectedTier: tier }),
 
-  setSlotImage: (slotId, base64) =>
-    set((s) => ({ slotImages: { ...s.slotImages, [slotId]: base64 } })),
+  reset: () => set(INITIAL_WORK_STATE),
 
-  removeSlotImage: (slotId) =>
-    set((s) => {
-      const { [slotId]: _, ...rest } = s.slotImages;
-      return { slotImages: rest };
-    }),
-
-  reset: () => set(INITIAL_STATE),
-
-  sendMessage: async (message) => {
+  sendMessage: async (message, options) => {
     const state = get();
     const history = state.chatMessages;
 
+    // User message displayed shows text (+ image count hint if any)
+    const hasImages = (options?.images?.length ?? 0) > 0;
+    const displayContent = hasImages
+      ? `${message}${message ? '\n' : ''}[附图 ${options!.images!.length} 张]`
+      : message;
+
     set({
-      chatMessages: [...history, { role: 'user', content: message }],
+      chatMessages: [...history, { role: 'user', content: displayContent }],
       chatPhase: 'confirming',
       isStreaming: true,
       error: null,
@@ -74,7 +84,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
     let assistantContent = '';
 
     try {
-      const stream = sendChat(message, history);
+      const stream = sendChat(message, history, options);
       for await (const event of stream) {
         switch (event.type) {
           case 'delta':
@@ -158,9 +168,6 @@ export const usePromptStore = create<PromptState>((set, get) => ({
               set({ storyboardText: fullText });
             }
             break;
-          case 'slots':
-            if (event.slots) set({ imageSlots: event.slots });
-            break;
           case 'error':
             set({ error: event.error || '未知错误' });
             break;
@@ -171,20 +178,49 @@ export const usePromptStore = create<PromptState>((set, get) => ({
         set({ error: err.message });
       }
     } finally {
-      const slots = get().imageSlots.length > 0 ? get().imageSlots : extractImageSlots(fullText);
-      set({ isStreaming: false, chatPhase: 'done', imageSlots: slots });
+      set({ isStreaming: false, chatPhase: 'done' });
+
+      // 保存到历史记录
+      const { chatMessages: msgs, selectedStyle: style, selectedTier: tier } = get();
+      if (fullText) {
+        const firstUserMsg = msgs.find((m) => m.role === 'user')?.content ?? '';
+        const title = firstUserMsg.slice(0, 30) + (firstUserMsg.length > 30 ? '…' : '');
+        const record: SessionRecord = {
+          id: `${Date.now()}`,
+          title,
+          createdAt: new Date().toISOString(),
+          chatMessages: msgs,
+          storyboardText: fullText,
+          selectedStyle: style,
+          selectedTier: tier,
+        };
+        const updated = [record, ...loadHistory()];
+        saveHistory(updated);
+        set({ sessions: updated });
+      }
     }
   },
 
   getFullScript: () => {
-    const { storyboardText, imageSlots, slotImages } = get();
+    const { storyboardText } = get();
     if (!storyboardText) return '';
+    return storyboardText.trim();
+  },
 
-    const lines = [storyboardText.trim(), '', '---', '参考图清单：'];
-    imageSlots.forEach((slot, i) => {
-      const uploaded = slotImages[slot.id] ? '✅ 已上传' : '⬜ 未上传';
-      lines.push(`图${i + 1}(${slot.label})：${uploaded}`);
+  loadSession: (session) => {
+    set({
+      ...INITIAL_WORK_STATE,
+      chatMessages: session.chatMessages,
+      storyboardText: session.storyboardText,
+      selectedStyle: session.selectedStyle,
+      selectedTier: session.selectedTier,
+      chatPhase: 'done',
     });
-    return lines.join('\n');
+  },
+
+  deleteSession: (id) => {
+    const updated = get().sessions.filter((s) => s.id !== id);
+    saveHistory(updated);
+    set({ sessions: updated });
   },
 }));

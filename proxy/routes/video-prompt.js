@@ -3,7 +3,6 @@ import {
   TIERS,
   CHAT_SYSTEM_PROMPT,
   buildGeneratePrompt,
-  extractImageSlots,
   parseOptions,
   callAIStream,
 } from '../services/video-prompt-agent.js';
@@ -18,16 +17,33 @@ function sendSSE(res, type, data) {
 
 router.post('/chat', async (req, res) => {
   try {
-    const { message, history = [] } = req.body;
+    const { message, history = [], images = [], productUrl = '' } = req.body;
 
-    if (!message) {
+    if (!message && images.length === 0) {
       return res.status(400).json({ error: '消息不能为空' });
+    }
+
+    // 构建用户消息内容 — 支持多模态（文字 + 图片）
+    let userContent;
+    if (images.length > 0) {
+      const parts = images.slice(0, 5).map((img) => ({
+        type: 'image_url',
+        image_url: { url: img },
+      }));
+
+      let textPart = message || '请分析这些产品图片，帮我规划拍摄风格';
+      if (productUrl) textPart += `\n\n商品链接：${productUrl}`;
+
+      parts.push({ type: 'text', text: textPart });
+      userContent = parts;
+    } else {
+      userContent = productUrl ? `${message}\n\n商品链接：${productUrl}` : message;
     }
 
     const apiMessages = [
       { role: 'system', content: CHAT_SYSTEM_PROMPT },
       ...history.map((m) => ({ role: m.role, content: m.content })),
-      { role: 'user', content: message },
+      { role: 'user', content: userContent },
     ];
 
     res.writeHead(200, {
@@ -92,20 +108,11 @@ router.post('/generate', async (req, res) => {
       Connection: 'keep-alive',
     });
 
-    let fullResponse = '';
-
     for await (const token of callAIStream(apiMessages, { maxTokens: 4096 })) {
-      fullResponse += token;
       sendSSE(res, 'delta', { content: token });
     }
 
-    const slots = extractImageSlots(fullResponse);
-
-    if (slots.length > 0) {
-      sendSSE(res, 'slots', { slots });
-    }
-
-    sendSSE(res, 'done', { slots });
+    sendSSE(res, 'done', {});
     res.end();
   } catch (err) {
     if (!res.headersSent) {

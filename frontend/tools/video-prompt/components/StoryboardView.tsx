@@ -2,16 +2,11 @@ import { memo, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Copy, Download, Loader2 } from 'lucide-react';
 import { usePromptStore } from '../store/promptStore';
-import ImageSlotCard from './ImageSlotCard';
 
 export default memo(function StoryboardView() {
   const storyboardText = usePromptStore((s) => s.storyboardText);
-  const imageSlots = usePromptStore((s) => s.imageSlots);
-  const slotImages = usePromptStore((s) => s.slotImages);
   const isStreaming = usePromptStore((s) => s.isStreaming);
   const chatPhase = usePromptStore((s) => s.chatPhase);
-  const setSlotImage = usePromptStore((s) => s.setSlotImage);
-  const removeSlotImage = usePromptStore((s) => s.removeSlotImage);
   const getFullScript = usePromptStore((s) => s.getFullScript);
 
   const handleCopy = useCallback(async () => {
@@ -84,43 +79,25 @@ export default memo(function StoryboardView() {
         )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-5 min-h-0 space-y-6">
-        {/* Markdown table */}
+      {/* Content — structured storyboard */}
+      <div className="flex-1 overflow-y-auto p-5 min-h-0">
         {storyboardText && (
-          <div className="prose prose-invert prose-sm max-w-none prose-table:border-collapse prose-th:border prose-th:border-white/20 prose-th:px-3 prose-th:py-2 prose-th:bg-white/5 prose-td:border prose-td:border-white/10 prose-td:px-3 prose-td:py-2">
+          <div className="prose prose-invert prose-sm max-w-none
+            prose-h3:text-cm-primary prose-h3:text-sm prose-h3:font-semibold prose-h3:mt-0 prose-h3:mb-2
+            prose-p:text-white/80 prose-p:text-sm prose-p:my-1 prose-p:leading-relaxed
+            prose-strong:text-white/90
+            prose-hr:border-white/10 prose-hr:my-4
+            prose-table:border-collapse prose-th:border prose-th:border-white/20 prose-th:px-3 prose-th:py-2 prose-th:bg-white/5 prose-th:text-xs
+            prose-td:border prose-td:border-white/10 prose-td:px-3 prose-td:py-2 prose-td:text-xs prose-td:align-top
+            [&_hr+h3]:pt-0
+          ">
             <ReactMarkdown>{storyboardText}</ReactMarkdown>
-          </div>
-        )}
-
-        {/* Image upload area */}
-        {imageSlots.length > 0 && !isStreaming && (
-          <div className="border-t border-white/10 pt-5">
-            <h4 className="text-sm font-medium text-white/70 mb-3">
-              📷 上传参考图片
-              <span className="text-white/30 text-xs ml-2">
-                {Object.keys(slotImages).length}/{imageSlots.length} 已上传
-              </span>
-            </h4>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-              {imageSlots.map((slot, i) => (
-                <ImageSlotCard
-                  key={slot.id}
-                  slotId={slot.id}
-                  label={slot.label}
-                  index={i}
-                  imageBase64={slotImages[slot.id] || null}
-                  onUpload={setSlotImage}
-                  onRemove={removeSlotImage}
-                />
-              ))}
-            </div>
           </div>
         )}
 
         {/* Action buttons */}
         {chatPhase === 'done' && !isStreaming && storyboardText && (
-          <div className="border-t border-white/10 pt-5 flex flex-col gap-3">
+          <div className="border-t border-white/10 pt-5 mt-6 flex flex-col gap-3">
             <button
               onClick={handleCopy}
               className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-cm-primary text-cm-surface font-medium hover:bg-cm-primary/80 transition-colors"

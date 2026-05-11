@@ -5,13 +5,18 @@ const API_BASE = '/api/video-prompt';
 export async function* sendChat(
   message: string,
   history: ChatMessage[],
-  signal?: AbortSignal
+  options?: { images?: string[]; productUrl?: string; signal?: AbortSignal }
 ): AsyncGenerator<SSEEvent> {
   const response = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, history }),
-    signal,
+    body: JSON.stringify({
+      message,
+      history,
+      images: options?.images ?? [],
+      productUrl: options?.productUrl ?? '',
+    }),
+    signal: options?.signal,
   });
 
   if (!response.ok) {
@@ -20,36 +25,7 @@ export async function* sendChat(
     return;
   }
 
-  const reader = response.body!.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || !trimmed.startsWith('data: ')) continue;
-      try {
-        yield JSON.parse(trimmed.slice(6)) as SSEEvent;
-      } catch {
-        // ignore non-JSON lines
-      }
-    }
-  }
-
-  if (buffer.trim().startsWith('data: ')) {
-    try {
-      yield JSON.parse(buffer.trim().slice(6)) as SSEEvent;
-    } catch {
-      // ignore
-    }
-  }
+  yield* readSSEStream(response);
 }
 
 export async function* generateStoryboard(
@@ -71,6 +47,10 @@ export async function* generateStoryboard(
     return;
   }
 
+  yield* readSSEStream(response);
+}
+
+async function* readSSEStream(response: Response): AsyncGenerator<SSEEvent> {
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
@@ -89,7 +69,7 @@ export async function* generateStoryboard(
       try {
         yield JSON.parse(trimmed.slice(6)) as SSEEvent;
       } catch {
-        // ignore
+        // ignore non-JSON lines
       }
     }
   }
