@@ -90,16 +90,21 @@ const SYSTEM_PROMPT_BASE = `# 角色：资深电商广告创意总监
 const STEP_PROMPTS = {
   1: `## 当前任务：产品解析（第1步/共6步）
 
-分析用户提供的产品信息（图片/链接/文字描述），提取：
-- 品类定位
-- 核心卖点Top3
-- 竞品差异点
-- 价格带
-- 视觉特征
+**首先判断用户输入的信息量**：
+- 如果用户只提供了一个产品名称（如"我想卖鼠标""蓝牙耳机"），信息明显不足，你需要主动帮用户做**产品调研**：
+  - 基于你的知识，分析该品类的市场现状和典型用户画像
+  - 推断该品类常见的3-5个核心卖点方向
+  - 给出典型的价格带区间和竞品格局
+  - 建议这个品类适合的广告打法和情感基调
+  - 以上内容整理为一份「产品知识草稿」，请用户审核修改
+- 如果用户已经提供了较详细的产品信息（卖点/价格/竞品/图片），则直接分析提取：
+  - 品类定位
+  - 核心卖点Top3
+  - 竞品差异点
+  - 价格带
+  - 视觉特征
 
-如果用户只发了图片没有说话，你直接分析图片内容。
-如果信息不足，主动询问补充。
-分析完毕后以清晰的列表格式展示。用户可以直接发消息讨论修改，你在本步骤内调整分析结果，绝不进入下一步。`,
+分析完毕后以清晰的列表格式展示。用户可以直接发消息讨论修改，你在本步骤内调整，绝不进入下一步。`,
 
   2: `## 当前任务：人群痛点（第2步/共6步）
 
@@ -128,8 +133,13 @@ const STEP_PROMPTS = {
 
   4: `## 当前任务：创意构思（第4步/共6步）
 
-基于已选的广告策略，构思3个具体的故事概念：
-- 每个概念：标题（2-4字）+ 故事梗概（2-3句话）
+首先主动询问用户：「关于这个故事，你有自己的原创想法或创意方向吗？比如特定题材、世界观、角色设定、故事风格？如果有请描述，我会围绕你的创意来构思方案。」
+
+- 如果用户提供了原创创意方向，围绕该方向构思3个故事概念，其中至少1个忠实于用户的创意、另外2个是该创意的变体或延伸
+- 如果用户表示"你来想"或跳过，则基于已选的广告策略，自主构思3个有差异性的故事概念
+
+每个概念要求：
+- 标题（2-4字）+ 故事梗概（2-3句话）
 - 要包含：主角是谁、发生什么、产品怎么出现、结局
 - 3个概念风格有差异
 
@@ -149,42 +159,75 @@ const STEP_PROMPTS = {
 此步骤由档位选择触发，不在对话中进行。`,
 };
 
+// 专业分镜输出格式（所有档位共用）
+const PROFESSIONAL_STORYBOARD_FORMAT = `## 分镜输出格式（极其重要）
+你必须按专业拍摄分镜格式输出，每个分镜包含以下全部字段。这不是建议，是硬性要求：
+
+| 字段 | 说明 | 示例 |
+|------|------|------|
+| **镜号** | 分镜序号 | 1, 2, 3... |
+| **时长** | 精确到秒 | 3s, 5s, 2s |
+| **景别** | 远景/全景/中景/近景/特写/大特写 | 特写 |
+| **运镜** | 推/拉/摇/移/跟/升/降/固定/手持 | 缓慢推近 |
+| **灯光** | 主光方向+色调+氛围 | 暖调侧光，柔和高亮 |
+| **画面描述** | 构图、主体、动作、氛围（1-2句） | 俯拍，女主手指轻触被面… |
+| **对白/旁白** | 台词或画外音（无则写"无"） | "这个冬天，不再冷" |
+| **音效** | 环境音/音效/背景音乐提示 | 轻柔钢琴起，被子摩擦声 |
+| **转场** | 切/淡入淡出/叠化/划像 | 硬切 |
+| **产品植入** | 如有产品露出，标注位置和方式 | 女主拉开被子的特写中露出品牌Logo |
+
+格式模板：
+\`\`\`
+### 分镜1 (0:00-0:03 | 3秒)
+- **景别**: 特写
+- **运镜**: 缓慢推近
+- **灯光**: 暖调侧光
+- **画面**: [画面描述]
+- **对白/旁白**: "[台词]" / 无
+- **音效**: [音效描述]
+- **转场**: 硬切
+- **产品**: [植入说明或无]
+
+### 分镜2 (0:03-0:07 | 4秒)
+...
+\`\`\``;
+
 const TIER_SPECS = {
   'ultra-short': {
     label: '极短',
     duration: '15-30秒',
-    sceneCount: '3-5个画面',
+    sceneCount: '3-6个分镜',
     wordCount: '100-200字',
     structure: '快节奏 → 痛点共鸣 → 产品闪现 → 效果展示 → 引导点击',
-    instruction: `生成一个极短广告剧本（15-30秒，3-5个画面，100-200字）。
-节奏极快，每个画面2-3句话。开头第一句就要抓人。产品一句话带过即可，重点是视觉冲击和情绪引导。`,
+    instruction: `生成一个极短广告剧本（15-30秒，输出3-6个专业分镜，100-200字）。
+节奏极快，每镜2-3秒。开头第一镜就要抓人。产品一闪而过即可，重点是视觉冲击和情绪引导。按下方「分镜输出格式」规范输出。`,
   },
   'short': {
     label: '短片',
     duration: '30-60秒',
-    sceneCount: '5-10个场景',
+    sceneCount: '6-12个分镜',
     wordCount: '200-500字',
     structure: '场景铺设 → 冲突/痛点 → 产品登场解决问题 → 效果对比 → CTA',
-    instruction: `生成一个短片广告剧本（30-60秒，5-10个场景，200-500字）。
-有完整的小故事弧线。前2个场景建立情境和痛点，中间产品作为关键道具登场，最后展示效果和CTA。`,
+    instruction: `生成一个短片广告剧本（30-60秒，输出6-12个专业分镜，200-500字）。
+有完整的小故事弧线。前2-3镜建立情境和痛点，中间产品作为关键道具登场，最后展示效果和CTA。每镜平均4-6秒。按下方「分镜输出格式」规范输出。`,
   },
   'standard': {
     label: '标准',
     duration: '1-2分钟',
-    sceneCount: '10-15个场景',
+    sceneCount: '12-20个分镜',
     wordCount: '500-800字',
     structure: '角色建立 → 故事冲突 → 产品自然出现 → 情感转折 → 产品升华 → CTA',
-    instruction: `生成一个标准广告剧本（1-2分钟，10-15个场景，500-800字）。
-有丰富的角色互动和情感层次。产品融入剧情转折点。台词要有记忆点。`,
+    instruction: `生成一个标准广告剧本（1-2分钟，输出12-20个专业分镜，500-800字）。
+有丰富的角色互动和情感层次。产品融入剧情转折点。台词要有记忆点。每镜平均5-7秒。按下方「分镜输出格式」规范输出。`,
   },
   'story': {
     label: '剧情',
     duration: '2-3分钟',
-    sceneCount: '15-25个场景',
+    sceneCount: '20-36个分镜',
     wordCount: '800-1500字',
     structure: '完整三幕结构 → 产品是故事核心道具 → 情感+功能双线植入 → 结尾升华',
-    instruction: `生成一个剧情广告剧本（2-3分钟，15-25个场景，800-1500字）。
-完整三幕结构，产品是驱动故事的核心道具。有角色成长弧线。适合品牌微短剧。`,
+    instruction: `生成一个剧情广告剧本（2-3分钟，输出20-36个专业分镜，800-1500字）。
+完整三幕结构，产品是驱动故事的核心道具。有角色成长弧线。适合品牌微短剧。每镜平均4-6秒。按下方「分镜输出格式」规范输出。`,
   },
 };
 
@@ -205,61 +248,301 @@ function isUserConfirming(message) {
   return STEP_CONFIRM_PATTERNS.some((p) => p.test(trimmed));
 }
 
-// ==================== 提示词构建 ====================
+// ==================== 产品调研：模糊输入检测 ====================
 
-export function buildSystemPrompt(session) {
-  const step = session.currentStep;
-  const profileContext = JSON.stringify(session.productProfile, null, 2);
+// 包含详细产品信息的特征词
+const DETAILED_PRODUCT_KEYWORDS = [
+  '卖点', '价格', '元', '竞品', '差异', '优势', '痛点', '场景',
+  '参数', '规格', '材质', '功能', '特点', '特征', '对比', '优于',
+  '目标人群', '用户画像', '年龄段', '收入',
+];
 
-  let prompt = SYSTEM_PROMPT_BASE + '\n\n';
+/**
+ * 判断用户输入是否为模糊产品描述（仅产品名，缺少详细信息）
+ * 触发 Step -1 产品调研模式
+ */
+export function isVagueProductInput(message) {
+  if (!message || typeof message !== 'string') return false;
+  const trimmed = message.trim();
 
-  if (Object.keys(session.productProfile.product).length > 0) {
-    prompt += `## 已收集的产品档案（内部参考，不要展示给用户）\n\`\`\`json\n${profileContext}\n\`\`\`\n\n`;
+  // 包含详细关键词 → 不是模糊输入（优先判断，不受长度影响）
+  const lower = trimmed.toLowerCase();
+  for (const kw of DETAILED_PRODUCT_KEYWORDS) {
+    if (lower.includes(kw.toLowerCase())) return false;
   }
 
-  if (step <= 5) {
-    prompt += STEP_PROMPTS[step];
-  }
+  // 太短：很可能只是产品名
+  if (trimmed.length <= 10) return true;
 
-  return prompt;
+  // 超过200字 → 不太可能是模糊描述
+  if (trimmed.length > 200) return false;
+
+  // 默认：短文本 + 无详细关键词 = 模糊输入
+  return trimmed.length < 50;
 }
 
-export function buildGeneratePrompt(session, tier) {
+// ==================== 分层 Prompt 组装 ====================
+
+import { createAssembler } from './prompt-assembler.js';
+import {
+  AD_PATTERNS,
+  SCRIPT_TEMPLATES,
+  GENRE_MATERIALS,
+  recommendAdPatterns,
+  recommendScriptTemplates,
+} from './ad-knowledge-base.js';
+
+const assembler = createAssembler();
+
+/** 已知的空值/占位符（不进入 prompt） */
+const EMPTY_VALUES = new Set(['无', '暂无', 'n/a', 'none', '']);
+
+/**
+ * 构建系统提示词（对话流程用）
+ * 使用分层组装器，按 priority 顺序排列
+ */
+export function buildSystemPrompt(session) {
+  const step = session.currentStep;
+  const hasProfile = Object.keys(session.productProfile.product).length > 0;
+
+  /** @type {import('./prompt-assembler.js').PromptLayer[]} */
+  const layers = [
+    {
+      id: 'role',
+      priority: 1,
+      title: '角色设定',
+      intensity: 'critical',
+      render: () => SYSTEM_PROMPT_BASE,
+    },
+    {
+      id: 'product-profile',
+      priority: 10,
+      title: '已收集的产品档案（内部参考，勿向用户展示）',
+      intensity: 'important',
+      render: () => hasProfile
+        ? `\`\`\`json\n${JSON.stringify(session.productProfile, null, 2)}\n\`\`\``
+        : null,
+    },
+    {
+      id: 'step-task',
+      priority: 95,
+      title: '当前任务',
+      intensity: 'critical',
+      render: () => step <= 5 ? STEP_PROMPTS[step] : null,
+    },
+  ];
+
+  return assembler.assemble(layers, { vars: {}, data: {} }).text;
+}
+
+/**
+ * 构建生成提示词（最终剧本生成用）
+ * 使用分层组装器，每层有明确的优先级和条件
+ */
+export function buildGeneratePrompt(session, tier, options = {}) {
   const spec = TIER_SPECS[tier];
   if (!spec) throw new Error(`不支持的档位: ${tier}`);
 
-  const profileContext = JSON.stringify(session.productProfile, null, 2);
+  const profile = session.productProfile;
+  const profileContext = JSON.stringify(profile, null, 2);
+  const sellingPoints = extractSellingPoints(profile);
+  const inferredPoints = inferSellingPoints(profile);
+  const episodeIndex = options.episodeIndex || 1;
+  const previousEpisodes = session.episodes || [];
+  const prevEpisode = episodeIndex > 1 ? previousEpisodes.find((ep) => ep.episodeIndex === episodeIndex - 1) : null;
 
-  return `${SYSTEM_PROMPT_BASE}
+  // 从知识库匹配最佳广告模式和剧本模板
+  const creativeDirection = profile.creative?.concept || '';
+  const emotionalTone = profile.strategy?.emotionalTone || '';
+  const productCategory = profile.product?.category || '';
+  const recommendedPatterns = recommendAdPatterns({ creativeDirection, productCategory, emotionalTone });
+  const recommendedTemplates = recommendScriptTemplates({ creativeDirection, tier });
 
-## 产品档案
-\`\`\`json
-${profileContext}
-\`\`\`
+  /** @type {import('./prompt-assembler.js').PromptLayer[]} */
+  const layers = [
+    // Layer 1 (p=0): 角色 + 核心指令
+    {
+      id: 'role-base',
+      priority: 0,
+      title: '角色与任务',
+      intensity: 'critical',
+      render: () => `${SYSTEM_PROMPT_BASE}
 
-## 生成要求
-${spec.instruction}
+你现在需要根据下面的产品档案和创意方案，生成一个完整的专业广告分镜剧本。`,
+    },
+    // Layer 2 (p=10): 产品硬约束（来自 Pattern 08 的 "标注不可编造"）
+    {
+      id: 'product-profile',
+      priority: 10,
+      title: '产品完整档案（必须严格使用，禁止编造或改动产品信息）',
+      intensity: 'critical',
+      render: () => `\`\`\`json\n${profileContext}\n\`\`\``,
+    },
+    // Layer 3 (p=15): 卖点分配矩阵
+    {
+      id: 'selling-points',
+      priority: 15,
+      title: '核心卖点分配（硬性要求）',
+      intensity: 'critical',
+      render: () => {
+        const points = sellingPoints.length > 0 ? sellingPoints : inferredPoints;
+        if (points.length === 0) return null;
 
-## 剧本结构参考
-${spec.structure}
+        return `以下 ${points.length} 个核心卖点必须在剧本中全部覆盖：
 
-## 输出格式
-用以下格式输出每个场景：
+${points.map((sp, i) => `${i + 1}. **${sp}**`).join('\n')}
 
-### 场景N：场景标题
-**画面描述**：（描述画面内容、构图、氛围）
-**角色动作**：（角色在做什么）
-**台词/旁白**：（对白或解说词）
-**产品植入**：（如有，标注产品如何出现）
-**时长**：约X秒
+要求：
+- 每个卖点至少在1-2个分镜中有明确、自然的展示，所有卖点必须覆盖
+- 卖点之间均匀分布在整个剧本中，避免集中堆砌
+- 卖点展示方式要自然融入剧情，不能像读说明书
+- 在第1个分镜开始前，先输出一段"卖点覆盖规划"，说明每个卖点预计在哪个分镜以什么方式出现`;
+      },
+    },
+    // Layer 4 (p=20): 生成规格（时长/分镜数/结构）
+    {
+      id: 'tier-spec',
+      priority: 20,
+      title: '生成规格',
+      intensity: 'critical',
+      render: () => `**时长**: ${spec.duration}
+**分镜数**: ${spec.sceneCount}
+**字数**: ${spec.wordCount}
+**剧本结构**: ${spec.structure}
+
+${spec.instruction}`,
+    },
+    // Layer 5 (p=25): 广告模式知识库（从 AD_PATTERNS 匹配）
+    {
+      id: 'ad-patterns',
+      priority: 25,
+      title: '参考广告模式（知识库匹配）',
+      intensity: 'important',
+      render: () => {
+        if (recommendedPatterns.length === 0) return null;
+        return recommendedPatterns.map((p) =>
+          `**${p.name}**\n- 公式: ${p.formula}\n- 示例: ${p.example}`
+        ).join('\n\n');
+      },
+    },
+    // Layer 6 (p=30): 剧本模板（从 SCRIPT_TEMPLATES 匹配）
+    {
+      id: 'script-templates',
+      priority: 30,
+      title: '参考剧本结构（知识库匹配）',
+      intensity: 'important',
+      render: () => {
+        if (recommendedTemplates.length === 0) return null;
+        return recommendedTemplates.map((t) =>
+          `**${t.name}** (${t.genre})\n- 结构: ${t.structure}\n- 套路: ${t.tropes.join(' / ')}`
+        ).join('\n\n');
+      },
+    },
+    // Layer 7 (p=48): 钩子回收 — 承接上集（来自 Pattern 04）
+    {
+      id: 'hook-look-back',
+      priority: 48,
+      title: '钩子回收：承接上集（硬性要求）',
+      intensity: 'critical',
+      render: () => {
+        if (!prevEpisode || (!prevEpisode.script && !prevEpisode.hookEnding)) return null;
+        // 优先用 hookEnding（精炼的钩子），否则取 script 尾 800 字
+        const source = prevEpisode.hookEnding || prevEpisode.script;
+        const tail = source.length > 800 ? source.slice(-800) : source;
+        return `上一集（第${episodeIndex - 1}集）结尾：
+
+"""\n${tail}\n"""
+
+要求：
+- 本集开头必须有1-2个分镜简短承接上集结尾的情境
+- 角色状态、情绪、场景要与上集结尾保持一致
+- 不能出现情节跳跃或角色性格突变`;
+      },
+    },
+    // Layer 8 (p=52): 钩子回收 — 铺垫下集
+    {
+      id: 'hook-look-ahead',
+      priority: 52,
+      title: '钩子回收：铺垫下集',
+      intensity: 'important',
+      render: () => {
+        if (!prevEpisode && episodeIndex === 1) {
+          // 第一集：也需要留钩子
+          return null; // 单集模式不需要留钩子
+        }
+        return `在本集结尾处，必须留下一个悬念或未完成的冲突，作为下一集的钩子。要求：
+- 钩子要自然，不能生硬中断
+- 钩子可以是一个新角色的出现、一个悬念的反转、一个意外的发现、或一个未解决的冲突
+- 钩子放在最后1-2个分镜中
+- 在CTA之前完成钩子植入`;
+      },
+    },
+    // Layer 9 (p=50): 流派素材（从 GENRE_MATERIALS 匹配）
+    {
+      id: 'genre-materials',
+      priority: 50,
+      title: '流派素材参考',
+      render: () => {
+        const genre = recommendedTemplates[0]?.genre;
+        if (!genre) return null;
+        const materials = Object.values(GENRE_MATERIALS).filter((m) => m.genre === genre);
+        if (materials.length === 0) return null;
+        const m = materials[0];
+        return `**场景模板**: ${m.sceneTemplate}
+**常见道具**: ${m.commonProps.join('、')}
+**对话风格**: ${m.dialogueStyle}
+**产品融入方式**: ${m.productAdaptation}`;
+      },
+    },
+    // Layer 10 (p=60): 分镜输出格式规范
+    {
+      id: 'storyboard-format',
+      priority: 60,
+      title: '分镜输出格式规范（硬性要求）',
+      intensity: 'critical',
+      render: () => PROFESSIONAL_STORYBOARD_FORMAT,
+    },
+    // Layer 9 (p=90): 最终输出指令
+    {
+      id: 'final-output',
+      priority: 90,
+      title: '最终输出要求',
+      intensity: 'critical',
+      render: () => `先输出「卖点覆盖规划」（表格形式），再按分镜格式输出完整剧本。
 
 最后附上：
-### CTA结尾
-**旁白**：（行动引导语）
-**画面**：（产品展示+购买信息）`;
+- **总时长/总镜数/产品植入镜头数/核心广告词/目标受众** 的统计摘要
+- ### CTA结尾 — 旁白/画面/购买信息`,
+    },
+  ];
+
+  return assembler.assemble(layers, {
+    vars: { tier: spec.label, duration: spec.duration },
+    data: { profile, recommendedPatterns, recommendedTemplates },
+  }).text;
 }
 
-export { TIER_SPECS };
+/** 从 ProductProfile 中提取明确的卖点列表 */
+function extractSellingPoints(profile) {
+  const product = profile?.product || {};
+  if (Array.isArray(product.sellingPoints) && product.sellingPoints.length > 0) {
+    return product.sellingPoints.filter(Boolean);
+  }
+  return [];
+}
+
+/** 当没有显式 sellingPoints 时，从其他字段推断潜在卖点 */
+function inferSellingPoints(profile) {
+  const product = profile?.product || {};
+  const points = [];
+  const edge = (product.competitiveEdge || '').trim();
+  if (edge && !EMPTY_VALUES.has(edge.toLowerCase())) {
+    points.push(edge);
+  }
+  return points;
+}
+
+export { TIER_SPECS, assembler };
 
 // ==================== AI调用 ====================
 
@@ -277,11 +560,14 @@ export function getAdScriptConfig() {
 
 export async function* callAIStream(messages, options = {}) {
   const config = getAdScriptConfig();
-  const provider = getProviderConfig(config.provider);
-  const apiKey = process.env[provider.envKey];
+  const providerName = options.provider || config.provider;
+  const provider = getProviderConfig(providerName);
+  // 模型级别自定义 envKey 优先（如豆包 seed 独立 key）
+  const envKey = options.envKey || provider.envKey;
+  const apiKey = process.env[envKey];
 
   if (!apiKey) {
-    throw new Error(`缺少 ${provider.envKey} 环境变量`);
+    throw new Error(`缺少 ${envKey} 环境变量`);
   }
 
   const url = `${provider.baseUrl}${provider.chatPath}`;
@@ -465,6 +751,7 @@ export class SessionManager {
       messages: [],
       productProfile: JSON.parse(JSON.stringify(EMPTY_PROFILE)),
       stepConfirmed: { ...INITIAL_STEP_CONFIRMED },
+      episodes: [],
       createdAt: now,
       updatedAt: now,
     });
@@ -492,6 +779,7 @@ export class SessionManager {
           })),
           productProfile: data.productProfile,
           stepConfirmed: data.stepConfirmed,
+          episodes: data.episodes || [],
           createdAt: new Date(data.createdAt),
           updatedAt: new Date(data.updatedAt),
         };
@@ -555,6 +843,18 @@ export class SessionManager {
         updateAdSessionTitle(db, sessionId, title);
       }
     }
+  }
+
+  saveEpisode(sessionId, episode) {
+    const session = this.getSession(sessionId);
+    if (!session.episodes) session.episodes = [];
+    session.episodes.push({
+      ...episode,
+      savedAt: new Date().toISOString(),
+    });
+    session.updatedAt = new Date();
+    log('info', `剧集保存 ${sessionId} ep=${episode.episodeIndex}`);
+    this._save(sessionId);
   }
 
   isReadyToGenerate(sessionId) {

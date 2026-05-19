@@ -119,8 +119,8 @@ router.post('/chat', async (req, res) => {
 router.post('/generate', async (req, res) => {
   const ts = () => new Date().toISOString();
   try {
-    const { sessionId, tier, mode = 'single' } = req.body;
-    console.log(`[${ts()}] [ad-script] 生成请求 sessionId=${sessionId} tier=${tier}`);
+    const { sessionId, tier, mode = 'single', episodeIndex = 1 } = req.body;
+    console.log(`[${ts()}] [ad-script] 生成请求 sessionId=${sessionId} tier=${tier} ep=${episodeIndex}`);
 
     if (!sessionId) {
       return res.status(400).json({ error: '缺少sessionId' });
@@ -144,13 +144,17 @@ router.post('/generate', async (req, res) => {
 
     console.log(`[${ts()}] [ad-script] 构建生成提示词 step=${session.currentStep} confirmed=${JSON.stringify(session.stepConfirmed)}`);
 
-    const generatePrompt = buildGeneratePrompt(session, tier);
+    const generatePrompt = buildGeneratePrompt(session, tier, { episodeIndex });
     const config = getAdScriptConfig();
+
+    const userMessage = episodeIndex > 1
+      ? `请根据以上所有信息，生成第${episodeIndex}集广告剧本。注意承接上一集结尾的情节。`
+      : '请根据以上所有信息，生成完整的广告剧本。';
 
     const apiMessages = [
       { role: 'system', content: generatePrompt },
       ...session.messages.map((m) => ({ role: m.role, content: m.content })),
-      { role: 'user', content: '请根据以上所有信息，生成完整的广告剧本。' },
+      { role: 'user', content: userMessage },
     ];
 
     res.writeHead(200, {
@@ -168,11 +172,25 @@ router.post('/generate', async (req, res) => {
       sendSSE(res, 'delta', { content: token });
     }
 
-    console.log(`[${ts()}] [ad-script] 剧本生成完成 length=${fullScript.length}`);
+    console.log(`[${ts()}] [ad-script] 剧本生成完成 length=${fullScript.length} ep=${episodeIndex}`);
+
+    // 提取结尾内容作为钩子（取最后500字）
+    const hookEnding = fullScript.length > 500
+      ? fullScript.slice(-500)
+      : fullScript;
+
+    // 自动保存剧集
+    sessionManager.saveEpisode(sessionId, {
+      tier,
+      script: fullScript,
+      hookEnding,
+      episodeIndex,
+    });
 
     sendSSE(res, 'done', {
       sessionId,
       tier,
+      episodeIndex,
       script: fullScript,
     });
     res.end();
@@ -198,6 +216,12 @@ router.get('/session/:sessionId', (req, res) => {
       currentStep: session.currentStep,
       stepConfirmed: session.stepConfirmed,
       productProfile: session.productProfile,
+      episodes: (session.episodes || []).map((ep) => ({
+        tier: ep.tier,
+        episodeIndex: ep.episodeIndex,
+        scriptLength: ep.script?.length || 0,
+        savedAt: ep.savedAt,
+      })),
       messageCount: session.messages.length,
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
