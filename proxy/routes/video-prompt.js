@@ -23,19 +23,22 @@ router.post('/chat', async (req, res) => {
       return res.status(400).json({ error: '消息不能为空' });
     }
 
-    // 构建用户消息内容 — 支持多模态（文字 + 图片）
+    // 构建用户消息内容
     let userContent;
+    let streamOptions = {};
+
     if (images.length > 0) {
+      // 有图片：用豆包视觉模型，content 为多模态数组
       const parts = images.slice(0, 5).map((img) => ({
         type: 'image_url',
         image_url: { url: img },
       }));
-
       let textPart = message || '请分析这些产品图片，帮我规划拍摄风格';
       if (productUrl) textPart += `\n\n商品链接：${productUrl}`;
-
       parts.push({ type: 'text', text: textPart });
       userContent = parts;
+      // 切换到豆包，支持 image_url 多模态
+      streamOptions = { provider: 'volcengine', model: 'ep-20260317144814-4pqbx' };
     } else {
       userContent = productUrl ? `${message}\n\n商品链接：${productUrl}` : message;
     }
@@ -54,7 +57,7 @@ router.post('/chat', async (req, res) => {
 
     let fullResponse = '';
 
-    for await (const token of callAIStream(apiMessages)) {
+    for await (const token of callAIStream(apiMessages, streamOptions)) {
       fullResponse += token;
       sendSSE(res, 'delta', { content: token });
     }
