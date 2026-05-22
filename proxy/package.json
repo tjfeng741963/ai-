@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch-path=./server.js --watch-path=./config --watch-path=./routes --watch-path=./providers --watch-path=./db server.js",
+    "dev": "node --watch-path=./server.js --watch-path=./config --watch-path=./routes --watch-path=./providers --watch-path=./db --watch-path=./services server.js",
     "start": "node server.js",
     "test": "vitest run",
     "test:watch": "vitest"

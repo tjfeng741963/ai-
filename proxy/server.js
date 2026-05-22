@@ -26,6 +26,7 @@ import adminRouter from './routes/admin.js';
 import promptsRouter, { configsHandler } from './routes/prompts.js';
 import adScriptRouter from './routes/ad-script.js';
 import videoPromptRouter from './routes/video-prompt.js';
+import interactiveDramaRouter from './routes/interactive-drama.js';
 
 /**
  * 从数据库 global_configs 表读取配置（带 fallback）
@@ -82,6 +83,7 @@ app.get('/api/configs', configsHandler);
 app.use('/api/ad-script', adScriptRouter);
 // 视频分镜脚本路由
 app.use('/api/video-prompt', videoPromptRouter);
+app.use('/api/interactive-drama', interactiveDramaRouter);
 
 // ==================== 工具函数 ====================
 

@@ -58,9 +58,96 @@ CREATE TABLE IF NOT EXISTS ad_script_messages (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- ============================================================
+-- 互动剧系统
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS story_lakes (
+  id               TEXT PRIMARY KEY,
+  title            TEXT NOT NULL DEFAULT '新故事湖',
+  description      TEXT DEFAULT '',
+  creation_profile TEXT NOT NULL DEFAULT '{}',
+  config           TEXT NOT NULL DEFAULT '{}',
+  user_id          TEXT DEFAULT '',
+  status           TEXT NOT NULL DEFAULT 'draft',
+  version          INTEGER NOT NULL DEFAULT 1,
+  created_at       TEXT DEFAULT (datetime('now')),
+  updated_at       TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS story_nodes (
+  id                TEXT PRIMARY KEY,
+  lake_id           TEXT NOT NULL REFERENCES story_lakes(id) ON DELETE CASCADE,
+  type              TEXT NOT NULL DEFAULT 'choice',
+  title             TEXT NOT NULL DEFAULT '',
+  content           TEXT DEFAULT '',
+  entry_conditions  TEXT DEFAULT '{}',
+  content_variants  TEXT DEFAULT '[]',
+  position_x        REAL NOT NULL DEFAULT 0,
+  position_y        REAL NOT NULL DEFAULT 0,
+  sort_order        INTEGER NOT NULL DEFAULT 0,
+  version           INTEGER NOT NULL DEFAULT 1,
+  is_ai_generated   INTEGER DEFAULT 0,
+  is_protected      INTEGER DEFAULT 0,
+  created_at        TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS story_edges (
+  id            TEXT PRIMARY KEY,
+  lake_id       TEXT NOT NULL REFERENCES story_lakes(id) ON DELETE CASCADE,
+  from_node_id  TEXT NOT NULL REFERENCES story_nodes(id) ON DELETE CASCADE,
+  to_node_id    TEXT NOT NULL REFERENCES story_nodes(id) ON DELETE CASCADE,
+  option_text   TEXT DEFAULT '',
+  priority      INTEGER NOT NULL DEFAULT 0,
+  conditions    TEXT DEFAULT '{}',
+  state_changes TEXT DEFAULT '[]',
+  timing        TEXT DEFAULT '{}',
+  created_at    TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS state_variables (
+  id            TEXT PRIMARY KEY,
+  lake_id       TEXT NOT NULL REFERENCES story_lakes(id) ON DELETE CASCADE,
+  name          TEXT NOT NULL,
+  type          TEXT NOT NULL DEFAULT 'boolean',
+  initial_value TEXT DEFAULT '',
+  description   TEXT DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS play_sessions (
+  id               TEXT PRIMARY KEY,
+  lake_id          TEXT NOT NULL REFERENCES story_lakes(id) ON DELETE CASCADE,
+  user_id          TEXT DEFAULT '',
+  current_node_id  TEXT,
+  current_state    TEXT NOT NULL DEFAULT '{}',
+  visited_node_ids TEXT NOT NULL DEFAULT '[]',
+  path_edges       TEXT NOT NULL DEFAULT '[]',
+  status           TEXT NOT NULL DEFAULT 'playing',
+  started_at       TEXT DEFAULT (datetime('now')),
+  updated_at       TEXT DEFAULT (datetime('now')),
+  ended_at         TEXT
+);
+
+CREATE TABLE IF NOT EXISTS play_events (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id      TEXT NOT NULL REFERENCES play_sessions(id) ON DELETE CASCADE,
+  node_id         TEXT,
+  edge_id         TEXT,
+  option_chosen   TEXT DEFAULT '',
+  state_snapshot  TEXT DEFAULT '{}',
+  created_at      TEXT DEFAULT (datetime('now'))
+);
+
 -- 索引
 CREATE INDEX IF NOT EXISTS idx_prompt_tool ON prompt_templates(tool_id);
 CREATE INDEX IF NOT EXISTS idx_history_target ON config_history(target_type, target_id);
 CREATE INDEX IF NOT EXISTS idx_history_created ON config_history(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ad_sessions_updated ON ad_script_sessions(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ad_messages_session ON ad_script_messages(session_id);
+CREATE INDEX IF NOT EXISTS idx_story_nodes_lake ON story_nodes(lake_id);
+CREATE INDEX IF NOT EXISTS idx_story_edges_lake ON story_edges(lake_id);
+CREATE INDEX IF NOT EXISTS idx_story_edges_from ON story_edges(from_node_id);
+CREATE INDEX IF NOT EXISTS idx_story_edges_to ON story_edges(to_node_id);
+CREATE INDEX IF NOT EXISTS idx_state_vars_lake ON state_variables(lake_id);
+CREATE INDEX IF NOT EXISTS idx_play_sessions_lake ON play_sessions(lake_id);
+CREATE INDEX IF NOT EXISTS idx_play_events_session ON play_events(session_id);

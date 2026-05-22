@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Clapperboard, ImagePlus, Megaphone, Wand2, Rocket, Video } from 'lucide-react';
+import { Clapperboard, ImagePlus, Megaphone, Wand2, Rocket, Video, GitBranch } from 'lucide-react';
 import type { ToolDefinition } from './types';
 
 const ScriptRatingPage = lazy(() => import('./script-rating/page'));
@@ -7,6 +7,7 @@ const OutpaintPage = lazy(() => import('./outpaint/page'));
 const AdScriptPage = lazy(() => import('./ad-script/page'));
 const SpaceLandingPage = lazy(() => import('./space-landing/page'));
 const VideoPromptPage = lazy(() => import('./video-prompt/page'));
+const InteractiveDramaPage = lazy(() => import('./interactive-drama/page'));
 
 export const toolRegistry: readonly ToolDefinition[] = [
   {
@@ -57,6 +58,16 @@ export const toolRegistry: readonly ToolDefinition[] = [
     route: '/tools/storyboard',
     status: 'coming_soon',
     accentColor: 'tertiary',
+  },
+  {
+    id: 'interactive-drama',
+    name: '互动剧',
+    description: 'AI 辅助设计互动剧本，6步引导 + 节点图编辑器 + 播放验证',
+    icon: GitBranch,
+    route: '/tools/interactive-drama',
+    status: 'beta',
+    accentColor: 'tertiary',
+    component: InteractiveDramaPage,
   },
   {
     id: 'space-landing',
