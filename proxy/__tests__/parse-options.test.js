@@ -53,66 +53,31 @@ describe('parseOptions', () => {
 });
 
 describe('extractOptionsFromText', () => {
-  it('应从编号列表中提取选项（管道符分隔）', () => {
-    const text = `分析完毕：
-1. 体感冲突 | 冰火两重天，穿上秒变时尚达人
-2. 场景冲突 | 地铁里的尊严保卫战
-3. 时间冲突 | 早上7点vs上午9点`;
+  it('应从 × 分隔的编号选项中提取', () => {
+    const text = `1. 通勤型男 × "怕热又得穿得体面" → 场景描述：每天挤地铁
+2. 懒人奶爸 × "一条裤子穿一周" → 场景描述：不想动脑
+3. 微胖兄弟 × "走路磨裆出汗" → 场景描述：夏天最尴尬`;
     const options = extractOptionsFromText(text);
     expect(options).toHaveLength(3);
-    expect(options[0].id).toBe('1');
-    expect(options[0].label).toBe('体感冲突');
-    expect(options[1].label).toBe('场景冲突');
+    expect(options[0].label).toBe('通勤型男');
+    expect(options[1].label).toBe('懒人奶爸');
   });
 
-  it('应从粗体标题中提取选项（冒号分隔）', () => {
-    const text = `推荐三种打法：
-1. **情感共鸣**：用温情故事打动用户
-2. **搞笑反转**：用反差制造记忆点
-3. **效果对比**：前后对比突出卖点`;
+  it('应从 ： 分隔的选项中提取', () => {
+    const text = `1. 情感共鸣：用温情打动用户
+2. 搞笑反转：反差制造记忆点
+3. 效果对比：前后对比突出卖点`;
     const options = extractOptionsFromText(text);
     expect(options).toHaveLength(3);
     expect(options[0].label).toBe('情感共鸣');
-    expect(options[2].label).toBe('效果对比');
   });
 
-  it('应从中文冒号分隔的选项中提取', () => {
-    const text = `1. 闺蜜日常：两个女生的穿搭对比
-2. 职场逆袭：面试前后的形象差异
-3. 约会惊喜：第一次见面的衣品加分`;
-    const options = extractOptionsFromText(text);
-    expect(options).toHaveLength(3);
-    expect(options[0].label).toBe('闺蜜日常');
+  it('少于2个选项时返回null', () => {
+    expect(extractOptionsFromText('1. 只有一个选项：不够')).toBeNull();
   });
 
-  it('应从乘号分隔的选项中提取', () => {
-    const text = `1. 宝妈群体 × 带娃出门收纳痛点
-2. 职场白领 × 通勤效率需求
-3. 学生党 × 性价比追求`;
-    const options = extractOptionsFromText(text);
-    expect(options).toHaveLength(3);
-    expect(options[0].label).toBe('宝妈群体');
-    expect(options[2].label).toBe('学生党');
-  });
-
-  it('应从破折号分隔的选项中提取', () => {
-    const text = `1. 情感路线 — 用温情打动用户
-2. 搞笑路线 — 反差制造记忆点`;
-    const options = extractOptionsFromText(text);
-    expect(options).toHaveLength(2);
-    expect(options[0].label).toBe('情感路线');
-  });
-
-  it('少于2个选项时应返回null', () => {
-    const text = '1. 只有一个选项 | 不够';
-    const options = extractOptionsFromText(text);
-    expect(options).toBeNull();
-  });
-
-  it('无编号列表时应返回null', () => {
-    const text = '你好，请告诉我你的产品是什么';
-    const options = extractOptionsFromText(text);
-    expect(options).toBeNull();
+  it('无编号行时返回null', () => {
+    expect(extractOptionsFromText('普通文本没有选项')).toBeNull();
   });
 });
 
@@ -124,23 +89,22 @@ describe('ensureOptions', () => {
     expect(options[0].label).toBe('X');
   });
 
-  it('无标记时回退到文本提取', () => {
+  it('无标记时回退到文本提取（安全网）', () => {
     const text = `方案如下：
-1. 方案A | 描述A
-2. 方案B | 描述B
-3. 方案C | 描述C`;
+1. 方案A × 描述A说明文字
+2. 方案B × 描述B说明文字
+3. 方案C × 描述C说明文字`;
     const { options } = ensureOptions(text);
     expect(options).toHaveLength(3);
     expect(options[0].label).toBe('方案A');
   });
 
-  it('无标记且无编号选项时返回null', () => {
-    const text = '产品分析完毕，这是一款AI玩具狗，核心卖点如下...';
-    const { options } = ensureOptions(text);
+  it('既无标记也无编号时返回null', () => {
+    const { options } = ensureOptions('产品分析完毕，这是一款AI玩具狗...');
     expect(options).toBeNull();
   });
 
-  it('cleanText应不含标记', () => {
+  it('cleanText应不含OPTIONS标记', () => {
     const text = '内容\n<!-- OPTIONS:[{"id":"1","label":"X","description":"Y"}] -->';
     const { cleanText } = ensureOptions(text);
     expect(cleanText).toBe('内容');

@@ -110,7 +110,13 @@ export default function ChatPanel() {
           o.id === option.id ? { ...o, selected: true } : o
         ) || []
       );
-      handleSend(`选择了「${option.label}」：${option.description}`);
+      // 单选项卡片 = 确认卡，自动推进步骤；多选项卡片 = 选择卡，需AI细化后再确认
+      const isConfirmCard = (messages[messages.length - 1]?.options?.length || 0) === 1;
+      handleSend(
+        `选择了「${option.label}」：${option.description}`,
+        undefined,
+        isConfirmCard,
+      );
     },
     [messages, setLastMessageOptions, handleSend]
   );
@@ -158,7 +164,7 @@ export default function ChatPanel() {
             <ChatMessage
               key={msg.id}
               message={msg}
-              isLatest={i === messages.length - 1 && !isStreaming}
+              isLatest={i === messages.length - 1}
               onOptionSelect={handleOptionSelect}
             />
           ))

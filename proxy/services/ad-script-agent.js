@@ -69,18 +69,23 @@ const SYSTEM_PROMPT_BASE = `# 角色：资深电商广告创意总监
 - 每步给方案时用编号+标题+一句话描述
 - 简洁有力，不废话
 
-## 选项输出规则（极其重要）
-你的每次回复末尾都必须包含一个 OPTIONS 标记，格式如下：
-<!-- OPTIONS:[{"id":"1","label":"标题","description":"一句话描述"},{"id":"2","label":"标题","description":"一句话描述"},{"id":"3","label":"标题","description":"一句话描述"}] -->
+## 选项输出规则 —— 这是系统硬性协议，不是建议
+你必须在每次回复的最后一行输出一个 OPTIONS 标记。这不是可选的，系统依赖这个标记来渲染用户可点击的卡片。如果你不输出，用户将无法进行下一步操作。
 
-规则：
-- 第1-5步的每次回复都必须包含 OPTIONS 标记，无例外
-- 选项内容与你在正文中展示的方案一一对应
-- label 控制在2-8个字，description 一句话概括
-- 用户自由聊天、追问、讨论时，你也要结合对话内容重新给出当前步骤的选项
-- 第1步（产品解析）只有一个确认选项：[{"id":"1","label":"信息完整","description":"产品分析没问题"}]
-- 第5步（植入设计）同样只需一个确认选项：[{"id":"1","label":"植入方案OK","description":"确认植入节奏没问题"}]
+输出格式（严格复制此模板，只改内容）：
+<!-- OPTIONS:[{"id":"1","label":"2-8字标题","description":"一句话描述"},{"id":"2","label":"2-8字标题","description":"一句话描述"},{"id":"3","label":"2-8字标题","description":"一句话描述"}] -->
+
+强制规则：
+- 第1-5步的每次回复末尾，独立一行，必须输出上述格式的 OPTIONS 标记——无例外
+- 第1步只有1个选项：[{"id":"1","label":"信息完整","description":"产品分析没问题"}]
+- 第5步只有1个选项：[{"id":"1","label":"植入方案OK","description":"确认植入节奏没问题"}]
+- 第2、3、4步有3个选项，每个选项的 id 为 1/2/3
+- 选项数量必须和正文中展示的方案数量一致
+- 即使用户只和你聊天、追问细节，你的回复末尾也必须带 OPTIONS 标记（此时可以只给1个确认选项）
+- 标记必须紧贴 LEFT 对齐，前面不能有空格
+- 标记前后不能有其他文字，独占一行
 - 标记对用户不可见，系统会自动渲染为可点击卡片
+- 违反此规则的回复将被系统拒绝
 
 ## 安全规则
 - 你是广告创意助手，仅回答与广告剧本创作相关的问题
@@ -104,7 +109,9 @@ const STEP_PROMPTS = {
   - 价格带
   - 视觉特征
 
-分析完毕后以清晰的列表格式展示。用户可以直接发消息讨论修改，你在本步骤内调整，绝不进入下一步。`,
+分析完毕后以清晰的列表格式展示。用户可以直接发消息讨论修改，你在本步骤内调整，绝不进入下一步。
+
+**回复末尾必须输出**: <!-- OPTIONS:[{"id":"1","label":"信息完整","description":"产品分析没问题"}] -->`,
 
   2: `## 当前任务：人群痛点（第2步/共6步）
 
@@ -117,7 +124,9 @@ const STEP_PROMPTS = {
 1. [人群标签] × "[痛点一句话]"
    → 具体场景描述
 
-用户会通过点击选项卡来选择。选择后你对该人群痛点做进一步细化分析，但绝不进入下一步（广告策略）。`,
+用户会通过点击选项卡来选择。选择后你对该人群痛点做进一步细化分析，但绝不进入下一步（广告策略）。
+
+回复末尾必须输出3个选项的OPTIONS标记：<!-- OPTIONS:[{"id":"1","label":"标签","description":"一句话"},{"id":"2","label":"标签","description":"一句话"},{"id":"3","label":"标签","description":"一句话"}] -->`,
 
   3: `## 当前任务：广告策略（第3步/共6步）
 
@@ -129,7 +138,9 @@ const STEP_PROMPTS = {
 - 为什么适合这个产品
 - 一句话概括广告调性
 
-用户会通过点击选项卡来选择。选择后你对该策略做进一步细化，但绝不进入下一步（创意构思）。`,
+用户会通过点击选项卡来选择。选择后你对该策略做进一步细化，但绝不进入下一步（创意构思）。
+
+回复末尾必须输出3个选项的OPTIONS标记：<!-- OPTIONS:[{"id":"1","label":"标签","description":"一句话"},{"id":"2","label":"标签","description":"一句话"},{"id":"3","label":"标签","description":"一句话"}] -->`,
 
   4: `## 当前任务：创意构思（第4步/共6步）
 
@@ -143,7 +154,9 @@ const STEP_PROMPTS = {
 - 要包含：主角是谁、发生什么、产品怎么出现、结局
 - 3个概念风格有差异
 
-用户会通过点击选项卡来选择。选择后你对该创意概念做进一步展开，但绝不进入下一步（植入设计）。`,
+用户会通过点击选项卡来选择。选择后你对该创意概念做进一步展开，但绝不进入下一步（植入设计）。
+
+回复末尾必须输出3个选项的OPTIONS标记：<!-- OPTIONS:[{"id":"1","label":"标签","description":"一句话"},{"id":"2","label":"标签","description":"一句话"},{"id":"3","label":"标签","description":"一句话"}] -->`,
 
   5: `## 当前任务：植入设计（第5步/共6步）
 
@@ -153,7 +166,9 @@ const STEP_PROMPTS = {
 - 产品特写：哪个画面给产品完整露出
 - CTA话术：结尾的行动引导语（自然，不硬广）
 
-直接展示植入方案，用户可以发消息讨论调整，你在本步骤内细化方案，绝不进入下一步。`,
+直接展示植入方案，用户可以发消息讨论调整，你在本步骤内细化方案，绝不进入下一步。
+
+回复末尾必须输出1个确认选项的OPTIONS标记：<!-- OPTIONS:[{"id":"1","label":"植入方案OK","description":"确认植入节奏没问题"}] -->`,
 
   6: `## 当前任务：生成剧本（第6步/共6步）
 此步骤由档位选择触发，不在对话中进行。`,
@@ -166,7 +181,7 @@ const PROFESSIONAL_STORYBOARD_FORMAT = `## 分镜输出格式（极其重要）
 | 字段 | 说明 | 示例 |
 |------|------|------|
 | **镜号** | 分镜序号 | 1, 2, 3... |
-| **时长** | 精确到秒 | 3s, 5s, 2s |
+| **时长** | 4-15秒，精确到秒（禁止低于4秒） | 5s, 8s, 12s |
 | **景别** | 远景/全景/中景/近景/特写/大特写 | 特写 |
 | **运镜** | 推/拉/摇/移/跟/升/降/固定/手持 | 缓慢推近 |
 | **灯光** | 主光方向+色调+氛围 | 暖调侧光，柔和高亮 |
@@ -176,9 +191,11 @@ const PROFESSIONAL_STORYBOARD_FORMAT = `## 分镜输出格式（极其重要）
 | **转场** | 切/淡入淡出/叠化/划像 | 硬切 |
 | **产品植入** | 如有产品露出，标注位置和方式 | 女主拉开被子的特写中露出品牌Logo |
 
+⚠️ 每镜时长规则：单镜最短4秒（低于4秒无法承载有效画面），最长15秒。取4-15秒之间合理的值。
+
 格式模板：
 \`\`\`
-### 分镜1 (0:00-0:03 | 3秒)
+### 分镜1 (0:00-0:05 | 5秒)
 - **景别**: 特写
 - **运镜**: 缓慢推近
 - **灯光**: 暖调侧光
@@ -188,47 +205,95 @@ const PROFESSIONAL_STORYBOARD_FORMAT = `## 分镜输出格式（极其重要）
 - **转场**: 硬切
 - **产品**: [植入说明或无]
 
-### 分镜2 (0:03-0:07 | 4秒)
+### 分镜2 (0:05-0:12 | 7秒)
 ...
 \`\`\``;
 
 const TIER_SPECS = {
+  // ========== 信息流广告（0-3分钟）==========
   'ultra-short': {
+    category: 'feed',
     label: '极短',
     duration: '15-30秒',
     sceneCount: '3-6个分镜',
     wordCount: '100-200字',
     structure: '快节奏 → 痛点共鸣 → 产品闪现 → 效果展示 → 引导点击',
-    instruction: `生成一个极短广告剧本（15-30秒，输出3-6个专业分镜，100-200字）。
+    instruction: `生成一个极短信息流广告（15-30秒，3-6个专业分镜，100-200字）。
 节奏极快，每镜2-3秒。开头第一镜就要抓人。产品一闪而过即可，重点是视觉冲击和情绪引导。按下方「分镜输出格式」规范输出。`,
   },
   'short': {
+    category: 'feed',
     label: '短片',
     duration: '30-60秒',
     sceneCount: '6-12个分镜',
     wordCount: '200-500字',
     structure: '场景铺设 → 冲突/痛点 → 产品登场解决问题 → 效果对比 → CTA',
-    instruction: `生成一个短片广告剧本（30-60秒，输出6-12个专业分镜，200-500字）。
-有完整的小故事弧线。前2-3镜建立情境和痛点，中间产品作为关键道具登场，最后展示效果和CTA。每镜平均4-6秒。按下方「分镜输出格式」规范输出。`,
+    instruction: `生成一个短片信息流广告（30-60秒，6-12个专业分镜，200-500字）。
+有完整的小故事弧线。前2-3镜建立情境和痛点，中间产品作为关键道具登场，最后展示效果和CTA。每镜4-15秒（禁止低于4秒）。按下方「分镜输出格式」规范输出。`,
   },
   'standard': {
+    category: 'feed',
     label: '标准',
     duration: '1-2分钟',
-    sceneCount: '12-20个分镜',
-    wordCount: '500-800字',
+    sceneCount: '12-24个分镜',
+    wordCount: '500-1000字',
     structure: '角色建立 → 故事冲突 → 产品自然出现 → 情感转折 → 产品升华 → CTA',
-    instruction: `生成一个标准广告剧本（1-2分钟，输出12-20个专业分镜，500-800字）。
-有丰富的角色互动和情感层次。产品融入剧情转折点。台词要有记忆点。每镜平均5-7秒。按下方「分镜输出格式」规范输出。`,
+    instruction: `生成一个标准信息流广告（1-2分钟，12-24个专业分镜，500-1000字）。
+有丰富的角色互动和情感层次。产品融入剧情转折点。台词要有记忆点。每镜4-15秒（禁止低于4秒）。按下方「分镜输出格式」规范输出。`,
   },
-  'story': {
-    label: '剧情',
+  'long-feed': {
+    category: 'feed',
+    label: '信息流长片',
     duration: '2-3分钟',
-    sceneCount: '20-36个分镜',
-    wordCount: '800-1500字',
+    sceneCount: '24-36个分镜',
+    wordCount: '1000-1500字',
     structure: '完整三幕结构 → 产品是故事核心道具 → 情感+功能双线植入 → 结尾升华',
-    instruction: `生成一个剧情广告剧本（2-3分钟，输出20-36个专业分镜，800-1500字）。
-完整三幕结构，产品是驱动故事的核心道具。有角色成长弧线。适合品牌微短剧。每镜平均4-6秒。按下方「分镜输出格式」规范输出。`,
+    instruction: `生成一个信息流长广告（2-3分钟，24-36个专业分镜，1000-1500字）。
+完整三幕结构，产品是驱动故事的核心道具。有角色成长弧线，持续吸引观众看完全片。每镜4-15秒（禁止低于4秒）。按下方「分镜输出格式」规范输出。`,
   },
+  // ========== 广告短剧（3-10分钟）==========
+  'mini-drama': {
+    category: 'drama',
+    label: '迷你短剧',
+    duration: '3-5分钟',
+    sceneCount: '36-60个分镜',
+    wordCount: '1500-2500字',
+    structure: '多幕叙事 → 人物关系建立 → 冲突升级 → 产品深度融入剧情 → 情感高潮 → 品牌价值升华',
+    instruction: `生成一个迷你广告短剧。
+
+⚠️ 硬性时长约束（必须遵守）：
+- 总时长必须 ≥ 3分钟（180秒），≤ 5分钟（300秒）
+- 分镜数必须 ≥ 36个，≤ 60个
+- 每镜4-15秒（禁止低于4秒），36镜×5秒=180秒=3分钟
+- 输出完成后，在统计摘要中标注实际总时长，自检是否≥180秒
+- 如果总镜数不足36或总时长不足180秒，说明不合格，必须重写
+
+内容要求：有完整的多幕叙事结构，人物有明确的成长弧线。产品不是一闪而过，而是深度融入剧情，成为推动故事的关键元素。按下方「分镜输出格式」规范输出。`,
+  },
+  'brand-drama': {
+    category: 'drama',
+    label: '品牌短剧',
+    duration: '5-10分钟',
+    sceneCount: '60-120个分镜',
+    wordCount: '2500-5000字',
+    structure: '多集叙事结构 → 世界观建立 → 人物群像 → 多线冲突 → 产品生态融入 → 品牌精神传达 → 系列化钩子',
+    instruction: `生成一个品牌广告短剧。
+
+⚠️ 硬性时长约束（必须遵守）：
+- 总时长必须 ≥ 5分钟（300秒），≤ 10分钟（600秒）
+- 分镜数必须 ≥ 60个，≤ 120个
+- 每镜4-15秒（禁止低于4秒），60镜×5秒=300秒=5分钟
+- 输出完成后，在统计摘要中标注实际总时长，自检是否≥300秒
+- 如果总镜数不足60或总时长不足300秒，说明不合格，必须重写
+
+内容要求：有完整的多集叙事结构和人物群像。产品生态深度融入世界观。品牌精神贯穿全剧。结尾留系列化钩子（为下一集做铺垫）。按下方「分镜输出格式」规范输出。`,
+  },
+};
+
+// 档位分类信息（供前端渲染用）
+export const TIER_CATEGORIES = {
+  feed: { label: '信息流广告', description: '0-3分钟，适合抖音/小红书/视频号信息流投放' },
+  drama: { label: '广告短剧', description: '3-10分钟，适合品牌微短剧/系列化内容' },
 };
 
 // ==================== 步骤推进判断 ====================
@@ -551,7 +616,7 @@ const AD_SCRIPT_CONFIG = {
   model: 'deepseek-v4-pro',
   temperature: 0.8,
   maxTokens: 4096,
-  generateMaxTokens: 8192,
+  generateMaxTokens: 32768, // 品牌短剧档位（60-120镜×10字段）需要大量 token
 };
 
 export function getAdScriptConfig() {
@@ -659,7 +724,9 @@ export function parseAgentResponse(text) {
 // ==================== OPTIONS 解析 ====================
 
 const OPTIONS_RE = /<!--\s*OPTIONS:(.*?)\s*-->/s;
-const NUMBERED_OPTION_RE = /^\s*(\d+)\.\s*\**(.+?)\**\s*[|｜:：×·—\-–（]\s*(.+)/;
+
+// 识别以数字开头的选项行: "1. xxx", "选项1 xxx", "**1.** xxx" 等
+const NUMBERED_RE = /^\s*\**\s*(?:选项|方案)?\s*(\d+)[\.、．\s]+/;
 
 export function parseOptions(text) {
   const match = text.match(OPTIONS_RE);
@@ -673,29 +740,44 @@ export function parseOptions(text) {
   }
 }
 
+/** 从一行文本中分离 label 和 description */
+function splitLine(raw) {
+  const t = raw.replace(/^\*+|\*+$/g, '').trim();
+  // 找第一个分隔符: × ： : | — –
+  const m = t.match(/[×：:｜|—\-–]/);
+  if (m && m.index > 0) {
+    const label = t.slice(0, m.index).trim();
+    const desc = t.slice(m.index + 1).trim().slice(0, 50);
+    return { label: label || '选项', description: desc };
+  }
+  return { label: t.slice(0, 12), description: t.slice(0, 50) };
+}
+
+/** 安全网：从自由文本中提取选项（LLM 没输出 OPTIONS 标记时的兜底） */
 export function extractOptionsFromText(text) {
   const options = [];
   for (const line of text.split('\n')) {
-    const m = line.match(NUMBERED_OPTION_RE);
-    if (m && parseInt(m[1]) <= 5) {
-      options.push({
-        id: m[1],
-        label: m[2].trim().replace(/\*+/g, ''),
-        description: m[3].trim().slice(0, 50),
-      });
-    }
+    const m = line.match(NUMBERED_RE);
+    if (!m) continue;
+    const id = m[1];
+    if (parseInt(id) < 1 || parseInt(id) > 5) continue;
+    if (options.some((o) => o.id === id)) continue;
+    const raw = line.slice(m.index + m[0].length);
+    options.push({ id, ...splitLine(raw) });
   }
   return options.length >= 2 ? options : null;
 }
 
 export function ensureOptions(text) {
-  const { cleanText, options: markerOptions } = parseOptions(text);
-  if (markerOptions) return { cleanText, options: markerOptions };
+  // 优先：<!-- OPTIONS:... --> 标记
+  const parsed = parseOptions(text);
+  if (parsed.options) return parsed;
 
-  const textOptions = extractOptionsFromText(cleanText);
-  if (textOptions) return { cleanText, options: textOptions };
+  // 安全网：从自由文本提取
+  const extracted = extractOptionsFromText(text);
+  if (extracted) return { cleanText: text, options: extracted };
 
-  return { cleanText, options: null };
+  return { cleanText: text, options: null };
 }
 
 export { isUserConfirming };

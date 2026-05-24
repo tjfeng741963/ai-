@@ -58,7 +58,7 @@ export interface ProductProfile {
   };
 }
 
-export type TierType = 'ultra-short' | 'short' | 'standard' | 'story';
+export type TierType = 'ultra-short' | 'short' | 'standard' | 'long-feed' | 'mini-drama' | 'brand-drama';
 
 export interface TierConfig {
   id: TierType;
@@ -67,13 +67,29 @@ export interface TierConfig {
   sceneCount: string;
   wordCount: string;
   description: string;
+  category: 'feed' | 'drama';
 }
 
+export interface TierCategory {
+  id: 'feed' | 'drama';
+  label: string;
+  description: string;
+}
+
+export const TIER_CATEGORIES: TierCategory[] = [
+  { id: 'feed', label: '信息流广告', description: '0-3分钟，适合抖音/小红书/视频号投放' },
+  { id: 'drama', label: '广告短剧', description: '3-10分钟，品牌微短剧/系列化内容' },
+];
+
 export const TIER_CONFIGS: TierConfig[] = [
-  { id: 'ultra-short', label: '极短', duration: '15-30s', sceneCount: '3-5个画面', wordCount: '100-200字', description: '信息流快速种草' },
-  { id: 'short', label: '短片', duration: '30-60s', sceneCount: '5-10个场景', wordCount: '200-500字', description: '信息流广告主力' },
-  { id: 'standard', label: '标准', duration: '1-2min', sceneCount: '10-15个场景', wordCount: '500-800字', description: '品牌深度种草' },
-  { id: 'story', label: '剧情', duration: '2-3min', sceneCount: '15-25个场景', wordCount: '800-1500字', description: '品牌微短剧' },
+  // 信息流广告
+  { id: 'ultra-short', category: 'feed', label: '极短', duration: '15-30s', sceneCount: '3-6镜', wordCount: '100-200字', description: '快速种草，视觉冲击' },
+  { id: 'short', category: 'feed', label: '短片', duration: '30-60s', sceneCount: '6-12镜', wordCount: '200-500字', description: '小故事弧线，产品登场' },
+  { id: 'standard', category: 'feed', label: '标准', duration: '1-2min', sceneCount: '12-24镜', wordCount: '500-1000字', description: '角色互动，情感层次' },
+  { id: 'long-feed', category: 'feed', label: '长信息流', duration: '2-3min', sceneCount: '24-36镜', wordCount: '1000-1500字', description: '三幕结构，品牌深度' },
+  // 广告短剧
+  { id: 'mini-drama', category: 'drama', label: '迷你短剧', duration: '3-5min', sceneCount: '36-60镜', wordCount: '1500-2500字', description: '多幕叙事，产品深度融入' },
+  { id: 'brand-drama', category: 'drama', label: '品牌短剧', duration: '5-10min', sceneCount: '60-120镜', wordCount: '2500-5000字', description: '世界观+人物群像+系列化' },
 ];
 
 export const FLOW_STEPS: FlowStep[] = [

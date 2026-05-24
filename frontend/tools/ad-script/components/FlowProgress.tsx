@@ -1,8 +1,8 @@
 import { memo } from 'react';
-import { Package, Users, Target, Lightbulb, Film, FileText, Check, Lock, Loader2 } from 'lucide-react';
+import { Package, Users, Target, Lightbulb, Film, Check, Lock, Loader2 } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 
-const STEP_ICONS = [Package, Users, Target, Lightbulb, Film, FileText];
+const STEP_ICONS = [Package, Users, Target, Lightbulb, Film];
 
 export default memo(function FlowProgress() {
   const getFlowSteps = useChatStore((s) => s.getFlowSteps);
@@ -51,23 +51,6 @@ export default memo(function FlowProgress() {
           );
         })}
 
-        <div className="h-px bg-white/5 my-2" />
-
-        <button
-          onClick={() => setViewingStep(7)}
-          disabled={currentStep < 6}
-          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all text-xs ${
-            viewingStep === 7
-              ? 'bg-cm-primary/10 text-cm-primary border border-cm-primary/20'
-              : currentStep >= 6
-                ? 'text-white/50 hover:text-white hover:bg-white/5'
-                : 'text-white/20 cursor-not-allowed'
-          }`}
-        >
-          <FileText className={`w-4 h-4 shrink-0 ${viewingStep === 7 ? 'text-cm-primary' : ''}`} />
-          <span className="flex-1 truncate">完整剧本</span>
-          {currentStep < 6 ? <Lock className="w-3 h-3 text-white/20" /> : null}
-        </button>
       </div>
     </aside>
   );

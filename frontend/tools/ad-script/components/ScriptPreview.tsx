@@ -40,11 +40,14 @@ export default memo(function ScriptPreview() {
   const currentStep = useChatStore((s) => s.currentStep);
   const setShowTierModal = useChatStore((s) => s.setShowTierModal);
 
-  const isViewingScript = viewingStep === 7;
-  const rawContent = isViewingScript ? script : stepContents[viewingStep];
+  const hasScript = !!script;
+  const isScriptGenerating = isStreaming && currentStep >= 6;
+  const rawContent = hasScript ? script : stepContents[viewingStep];
   const content = rawContent ? stripOptionsMarker(rawContent) : rawContent;
-  const meta = STEP_LABELS[viewingStep] || STEP_LABELS[1];
-  const isCurrentStepStreaming = isStreaming && viewingStep === currentStep;
+  const meta = hasScript
+    ? { title: '剧本输出', emptyHint: '请通过档位弹窗生成剧本' }
+    : (STEP_LABELS[viewingStep] || STEP_LABELS[1]);
+  const isCurrentStepStreaming = isScriptGenerating;
 
   const handleCopy = async () => {
     if (!content) return;
@@ -101,7 +104,7 @@ export default memo(function ScriptPreview() {
             <button onClick={handleDownload} className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors" title="下载当前步骤">
               <Download className="w-4 h-4" />
             </button>
-            {isViewingScript && (
+            {hasScript && (
               <button onClick={() => setShowTierModal(true)} disabled={isStreaming} className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30" title="重新生成">
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -117,7 +120,7 @@ export default memo(function ScriptPreview() {
               <ReactMarkdown>{content}</ReactMarkdown>
             </div>
 
-            {isViewingScript && !isStreaming && (
+            {hasScript && !isStreaming && (
               <div className="mt-8 pt-6 border-t border-white/10 flex flex-col gap-3">
                 <button
                   onClick={handleDownloadFull}
@@ -136,7 +139,7 @@ export default memo(function ScriptPreview() {
               </div>
             )}
 
-            {!isViewingScript && !isStreaming && hasFullContent && currentStep >= 6 && (
+            {!hasScript && !isStreaming && hasFullContent && currentStep >= 6 && (
               <div className="mt-6 pt-4 border-t border-white/10">
                 <button
                   onClick={handleDownloadFull}
@@ -151,7 +154,7 @@ export default memo(function ScriptPreview() {
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="text-white/40 text-sm">{meta.emptyHint}</div>
-            {isViewingScript && currentStep >= 6 && (
+            {hasScript && currentStep >= 6 && (
               <button
                 onClick={() => setShowTierModal(true)}
                 className="mt-4 px-6 py-2.5 rounded-xl bg-cm-primary text-cm-surface font-medium hover:bg-cm-primary/80 transition-colors"

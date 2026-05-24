@@ -286,7 +286,9 @@ export function recommendScriptTemplates({ creativeDirection, tier } = {}) {
         'ultra-short': [15, 30],
         'short': [30, 60],
         'standard': [60, 120],
-        'story': [120, 180],
+        'long-feed': [120, 180],
+        'mini-drama': [180, 300],
+        'brand-drama': [300, 600],
       };
       const [tMin, tMax] = tierDurations[tier] || [0, Infinity];
       if (min <= tMax && max >= tMin) score += 3;

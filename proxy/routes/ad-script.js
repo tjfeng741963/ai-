@@ -87,7 +87,27 @@ router.post('/chat', async (req, res) => {
       sendSSE(res, 'delta', { content: token });
     }
 
-    const { cleanText, options } = ensureOptions(fullResponse);
+    const { cleanText, options: extractedOptions } = ensureOptions(fullResponse);
+
+    // 按步骤校验选项数：Step 1/5 只需1个确认选项，Step 2/3/4 需要3个选择选项
+    const STEP_OPTION_COUNT = { 1: 1, 2: 3, 3: 3, 4: 3, 5: 1 };
+    const expectedCount = STEP_OPTION_COUNT[session.currentStep] || 0;
+    const extractedCount = extractedOptions ? extractedOptions.length : 0;
+
+    let options;
+    if (extractedOptions && extractedCount === expectedCount) {
+      // 选项数匹配 → 使用提取的选项（来自 OPTIONS 标记或文本安全网）
+      options = extractedOptions;
+    } else if (extractedOptions && extractedCount !== expectedCount) {
+      // 选项数不匹配（如方案内部的编号段落被误提取）→ 用合成卡片替代
+      console.log(`[ad-script] 选项数不匹配 step=${session.currentStep} expected=${expectedCount} got=${extractedCount}，使用合成卡片`);
+      options = [{ id: '1', label: '确认', description: '继续下一步' }];
+    } else {
+      // 完全没有选项 → 合成卡片兜底
+      options = session.currentStep <= 5
+        ? [{ id: '1', label: '确认', description: '继续下一步' }]
+        : null;
+    }
 
     sessionManager.addMessage(sessionId, 'assistant', cleanText);
 
@@ -129,7 +149,7 @@ router.post('/generate', async (req, res) => {
       return res.status(400).json({ error: '缺少时长档位' });
     }
 
-    const validTiers = ['ultra-short', 'short', 'standard', 'story'];
+    const validTiers = ['ultra-short', 'short', 'standard', 'long-feed', 'mini-drama', 'brand-drama'];
     if (!validTiers.includes(tier)) {
       return res.status(400).json({ error: `不支持的档位: ${tier}，可选: ${validTiers.join('/')}` });
     }

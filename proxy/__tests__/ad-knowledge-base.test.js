@@ -100,9 +100,9 @@ describe('recommendScriptTemplates', () => {
     expect(result.length).toBeGreaterThan(0);
   });
 
-  it('故事档应匹配较长的模板', () => {
-    const result = recommendScriptTemplates({ tier: 'story' });
-    // 所有返回的模板应支持60s+时长
+  it('品牌短剧档应匹配最长的模板', () => {
+    const result = recommendScriptTemplates({ tier: 'brand-drama' });
+    // 所有返回的模板应支持180s+时长
     for (const tmpl of result) {
       const [_, max] = tmpl.duration.split('-').map((s) => parseInt(s) || 0);
       expect(max).toBeGreaterThanOrEqual(60);

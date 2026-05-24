@@ -93,15 +93,19 @@ describe('buildGeneratePrompt', () => {
     expect(() => buildGeneratePrompt(session, 'invalid')).toThrow('不支持的档位');
   });
 
-  it('所有四个档位都应有对应规格', () => {
-    expect(Object.keys(TIER_SPECS)).toEqual(['ultra-short', 'short', 'standard', 'story']);
+  it('所有6个档位都应有对应规格', () => {
+    expect(Object.keys(TIER_SPECS)).toEqual(['ultra-short', 'short', 'standard', 'long-feed', 'mini-drama', 'brand-drama']);
     for (const spec of Object.values(TIER_SPECS)) {
       expect(spec.label).toBeDefined();
       expect(spec.duration).toBeDefined();
       expect(spec.sceneCount).toBeDefined();
       expect(spec.wordCount).toBeDefined();
       expect(spec.instruction).toBeDefined();
+      expect(spec.category).toBeDefined();
     }
+    // 验证分类
+    expect(TIER_SPECS['ultra-short'].category).toBe('feed');
+    expect(TIER_SPECS['mini-drama'].category).toBe('drama');
   });
 
   // ============ 新增：专业分镜格式测试 ============
@@ -126,7 +130,7 @@ describe('buildGeneratePrompt', () => {
 
     // 这些字符串仅存在于 PROFESSIONAL_STORYBOARD_FORMAT，不存在于 TIER_SPECS
     expect(prompt).toContain('| 字段 | 说明 | 示例 |');
-    expect(prompt).toContain('### 分镜1 (0:00-0:03 | 3秒)');
+    expect(prompt).toContain('### 分镜1 (0:00-0:05 | 5秒)');
     expect(prompt).toContain('卖点覆盖规划');
   });
 
@@ -159,14 +163,14 @@ describe('buildGeneratePrompt', () => {
     const sessionId = manager.createSession();
     const session = manager.getSession(sessionId);
     const prompt = buildGeneratePrompt(session, 'standard');
-    expect(prompt).toMatch(/12-20个/);
+    expect(prompt).toMatch(/12-24个/);
   });
 
   it('剧情档位应要求20-36个分镜', () => {
     const sessionId = manager.createSession();
     const session = manager.getSession(sessionId);
-    const prompt = buildGeneratePrompt(session, 'story');
-    expect(prompt).toMatch(/20-36个/);
+    const prompt = buildGeneratePrompt(session, 'long-feed');
+    expect(prompt).toMatch(/24-36个/);
   });
 
   // ============ 新增：卖点分配矩阵测试 ============
@@ -209,7 +213,7 @@ describe('buildGeneratePrompt', () => {
       },
     });
     const session = manager.getSession(sessionId);
-    const prompt = buildGeneratePrompt(session, 'story');
+    const prompt = buildGeneratePrompt(session, 'long-feed');
 
     expect(prompt).toContain('卖点A');
     expect(prompt).toContain('卖点D');
@@ -398,7 +402,7 @@ describe('buildGeneratePrompt 多集钩子回收', () => {
   it('无前集时不应包含钩子回收层', () => {
     const sessionId = manager.createSession();
     const session = manager.getSession(sessionId);
-    const prompt = buildGeneratePrompt(session, 'story');
+    const prompt = buildGeneratePrompt(session, 'long-feed');
 
     expect(prompt).not.toContain('钩子回收');
     expect(prompt).not.toContain('承接上集');
@@ -408,13 +412,13 @@ describe('buildGeneratePrompt 多集钩子回收', () => {
     const sessionId = manager.createSession();
     const session = manager.getSession(sessionId);
     session.episodes = [{
-      tier: 'story',
+      tier: 'long-feed',
       script: 'x'.repeat(1000),
       hookEnding: 'x'.repeat(200),
       episodeIndex: 1,
     }];
 
-    const prompt = buildGeneratePrompt(session, 'story', { episodeIndex: 2 });
+    const prompt = buildGeneratePrompt(session, 'long-feed', { episodeIndex: 2 });
 
     expect(prompt).toContain('钩子回收');
     expect(prompt).toContain('承接上集');
@@ -425,13 +429,13 @@ describe('buildGeneratePrompt 多集钩子回收', () => {
     const session = manager.getSession(sessionId);
     const longText = 'A'.repeat(2000);
     session.episodes = [{
-      tier: 'story',
+      tier: 'long-feed',
       script: longText,
       hookEnding: longText.slice(-500),
       episodeIndex: 1,
     }];
 
-    const prompt = buildGeneratePrompt(session, 'story', { episodeIndex: 2 });
+    const prompt = buildGeneratePrompt(session, 'long-feed', { episodeIndex: 2 });
 
     // 优先使用 hookEnding（500字），不应包含完整2000字
     expect(prompt).not.toContain('A'.repeat(1500));
@@ -447,7 +451,7 @@ describe('buildGeneratePrompt 多集钩子回收', () => {
       episodeIndex: 1,
     }];
 
-    for (const tier of ['ultra-short', 'short', 'standard', 'story']) {
+    for (const tier of ['ultra-short', 'short', 'standard', 'long-feed']) {
       const prompt = buildGeneratePrompt(session, tier, { episodeIndex: 2 });
       expect(prompt).toContain('钩子回收');
     }
@@ -457,13 +461,13 @@ describe('buildGeneratePrompt 多集钩子回收', () => {
     const sessionId = manager.createSession();
     const session = manager.getSession(sessionId);
     session.episodes = [{
-      tier: 'story',
+      tier: 'long-feed',
       script: '...',
       hookEnding: '...',
       episodeIndex: 1,
     }];
 
-    const prompt = buildGeneratePrompt(session, 'story', { episodeIndex: 2 });
+    const prompt = buildGeneratePrompt(session, 'long-feed', { episodeIndex: 2 });
 
     expect(prompt).toMatch(/铺垫|下一集|钩子/);
     expect(prompt).toMatch(/结尾.*悬念|结尾.*钩子|留下.*悬念/);
@@ -492,7 +496,7 @@ describe('SessionManager 多集管理', () => {
   it('应能保存生成的剧集', () => {
     const sessionId = manager.createSession();
     manager.saveEpisode(sessionId, {
-      tier: 'story',
+      tier: 'long-feed',
       script: '完整剧本...',
       hookEnding: '结尾钩子：主角转身，发现身后站着的是...',
       episodeIndex: 1,
@@ -500,15 +504,15 @@ describe('SessionManager 多集管理', () => {
 
     const session = manager.getSession(sessionId);
     expect(session.episodes).toHaveLength(1);
-    expect(session.episodes[0].tier).toBe('story');
+    expect(session.episodes[0].tier).toBe('long-feed');
     expect(session.episodes[0].episodeIndex).toBe(1);
   });
 
   it('应能追加多集', () => {
     const sessionId = manager.createSession();
-    manager.saveEpisode(sessionId, { tier: 'story', script: '第1集', hookEnding: '钩子1', episodeIndex: 1 });
-    manager.saveEpisode(sessionId, { tier: 'story', script: '第2集', hookEnding: '钩子2', episodeIndex: 2 });
-    manager.saveEpisode(sessionId, { tier: 'story', script: '第3集', hookEnding: '钩子3', episodeIndex: 3 });
+    manager.saveEpisode(sessionId, { tier: 'long-feed', script: '第1集', hookEnding: '钩子1', episodeIndex: 1 });
+    manager.saveEpisode(sessionId, { tier: 'long-feed', script: '第2集', hookEnding: '钩子2', episodeIndex: 2 });
+    manager.saveEpisode(sessionId, { tier: 'long-feed', script: '第3集', hookEnding: '钩子3', episodeIndex: 3 });
 
     const session = manager.getSession(sessionId);
     expect(session.episodes).toHaveLength(3);

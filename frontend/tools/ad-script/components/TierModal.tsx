@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Zap, Film } from 'lucide-react';
 import { useChatStore } from '../store/chatStore';
 import { generateScript } from '../services/api';
-import { TIER_CONFIGS } from '../types';
+import { TIER_CONFIGS, TIER_CATEGORIES } from '../types';
 import type { TierType } from '../types';
 
 export default function TierModal() {
@@ -15,8 +15,6 @@ export default function TierModal() {
   const setScript = useChatStore((s) => s.setScript);
   const setIsStreaming = useChatStore((s) => s.setIsStreaming);
   const setError = useChatStore((s) => s.setError);
-  const setViewingStep = useChatStore((s) => s.setViewingStep);
-
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
@@ -27,7 +25,6 @@ export default function TierModal() {
     setIsStreaming(true);
     setScript('');
     setError(null);
-    setViewingStep(7);
 
     try {
       const stream = generateScript({ sessionId, tier: selectedTier });
@@ -54,6 +51,11 @@ export default function TierModal() {
     }
   };
 
+  const feedTiers = TIER_CONFIGS.filter((t) => t.category === 'feed');
+  const dramaTiers = TIER_CONFIGS.filter((t) => t.category === 'drama');
+  const feedCategory = TIER_CATEGORIES[0];
+  const dramaCategory = TIER_CATEGORIES[1];
+
   return (
     <AnimatePresence>
       {showTierModal && (
@@ -68,11 +70,11 @@ export default function TierModal() {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-cm-surface border border-white/10 rounded-2xl p-6 w-[520px] max-w-[90vw] shadow-cm-neon"
+            className="bg-cm-surface border border-white/10 rounded-2xl p-6 w-[620px] max-w-[92vw] max-h-[85vh] overflow-y-auto shadow-cm-neon"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-semibold text-white">选择广告时长档位</h3>
+              <h3 className="text-lg font-semibold text-white">选择档位</h3>
               <button
                 onClick={() => setShowTierModal(false)}
                 className="p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10"
@@ -81,28 +83,71 @@ export default function TierModal() {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {TIER_CONFIGS.map((tier) => (
-                <button
-                  key={tier.id}
-                  onClick={() => setSelectedTier(tier.id as TierType)}
-                  className={`text-left p-4 rounded-xl border transition-all ${
-                    selectedTier === tier.id
-                      ? 'border-cm-primary bg-cm-primary/10 shadow-cm-neon'
-                      : 'border-white/10 hover:border-white/20 bg-white/5'
-                  }`}
-                >
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-base font-semibold text-white">{tier.label}</span>
-                    <span className="text-xs text-cm-primary">{tier.duration}</span>
-                  </div>
-                  <div className="text-xs text-white/50 mb-2">{tier.description}</div>
-                  <div className="flex gap-3 text-[11px] text-white/30">
-                    <span>{tier.sceneCount}</span>
-                    <span>{tier.wordCount}</span>
-                  </div>
-                </button>
-              ))}
+            {/* 信息流广告 */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Zap className="w-4 h-4 text-cm-primary" />
+                <span className="text-sm font-semibold text-white">{feedCategory.label}</span>
+                <span className="text-[11px] text-white/40">{feedCategory.description}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {feedTiers.map((tier) => (
+                  <button
+                    key={tier.id}
+                    onClick={() => setSelectedTier(tier.id as TierType)}
+                    className={`text-left p-3 rounded-xl border transition-all ${
+                      selectedTier === tier.id
+                        ? 'border-cm-primary bg-cm-primary/10 shadow-cm-neon'
+                        : 'border-white/10 hover:border-white/20 bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-sm font-semibold text-white">{tier.label}</span>
+                      <span className="text-[11px] text-cm-primary">{tier.duration}</span>
+                    </div>
+                    <div className="text-[11px] text-white/50 mb-1.5">{tier.description}</div>
+                    <div className="flex gap-3 text-[10px] text-white/30">
+                      <span>{tier.sceneCount}</span>
+                      <span>{tier.wordCount}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 分隔线 */}
+            <div className="h-px bg-white/10 my-4" />
+
+            {/* 广告短剧 */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Film className="w-4 h-4 text-cm-secondary" />
+                <span className="text-sm font-semibold text-white">{dramaCategory.label}</span>
+                <span className="text-[11px] text-white/40">{dramaCategory.description}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {dramaTiers.map((tier) => (
+                  <button
+                    key={tier.id}
+                    onClick={() => setSelectedTier(tier.id as TierType)}
+                    className={`text-left p-3 rounded-xl border transition-all ${
+                      selectedTier === tier.id
+                        ? 'border-cm-secondary bg-cm-secondary/10 shadow-cm-neon'
+                        : 'border-white/10 hover:border-white/20 bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-sm font-semibold text-white">{tier.label}</span>
+                      <span className="text-[11px] text-cm-secondary">{tier.duration}</span>
+                    </div>
+                    <div className="text-[11px] text-white/50 mb-1.5">{tier.description}</div>
+                    <div className="flex gap-3 text-[10px] text-white/30">
+                      <span>{tier.sceneCount}</span>
+                      <span>{tier.wordCount}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <button
