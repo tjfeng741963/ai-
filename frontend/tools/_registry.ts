@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { Clapperboard, ImagePlus, Megaphone, Wand2, Rocket, Video, GitBranch } from 'lucide-react';
+import { Clapperboard, ImagePlus, Megaphone, Wand2, Rocket, Video, GitBranch, Music } from 'lucide-react';
 import type { ToolDefinition } from './types';
 
 const ScriptRatingPage = lazy(() => import('./script-rating/page'));
@@ -8,6 +8,7 @@ const AdScriptPage = lazy(() => import('./ad-script/page'));
 const SpaceLandingPage = lazy(() => import('./space-landing/page'));
 const VideoPromptPage = lazy(() => import('./video-prompt/page'));
 const InteractiveDramaPage = lazy(() => import('./interactive-drama/page'));
+const MVStoryboardPage = lazy(() => import('./mv-storyboard/page'));
 
 export const toolRegistry: readonly ToolDefinition[] = [
   {
@@ -49,6 +50,16 @@ export const toolRegistry: readonly ToolDefinition[] = [
     status: 'beta',
     accentColor: 'secondary',
     component: VideoPromptPage,
+  },
+  {
+    id: 'mv-storyboard',
+    name: 'MV分镜',
+    description: 'AI MV创意导演，对话式生成MV分镜脚本，输出 Seedance 2.0 提示词',
+    icon: Music,
+    route: '/tools/mv-storyboard',
+    status: 'beta',
+    accentColor: 'tertiary',
+    component: MVStoryboardPage,
   },
   {
     id: 'storyboard',
